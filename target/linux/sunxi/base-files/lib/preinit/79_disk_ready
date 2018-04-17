@@ -1,0 +1,78 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+# Copyright (C) 2017 PTPT52
+
+
+do_disk_ready() {
+	which fdisk && which partx && which mkfs.ext4 || return
+	overlay_size=$((1*1024*1024*1024)) #1G
+	disktype="dos"
+	fdisk -l /dev/mmcblk0 2>/dev/null | grep -q "type: gpt" && disktype="gpt"
+	sector_size=`fdisk -l /dev/mmcblk0 | grep "^Sector size" | awk '{print $4}'`
+	sector_size=$((sector_size+0))
+	test ${sector_size} -gt 0 || sector_size=512
+	diskpart=`fdisk -l /dev/mmcblk0 | grep '^/dev/mmcblk0p[0-9]' | wc -l`
+
+	if [ "$disktype" = "gpt" ]; then
+		echo no support stub gpt
+		return
+	elif [ "$disktype" = "dos" ]; then
+		[ "x$diskpart" = "x4" ] || {
+			disksize="`fdisk -l /dev/mmcblk0 | grep '/dev/mmcblk0:' | head -n1 | awk '{print $5}'`"
+			test -n "$disksize" || return
+			# <= 2GiB && return
+			test $disksize -le 2147483648 && return
+
+			echo -ne 'd\n4\nw\n' | fdisk /dev/mmcblk0
+			echo -ne 'd\n3\nw\n' | fdisk /dev/mmcblk0
+			set `fdisk -l /dev/mmcblk0 2>/dev/null | grep ^/dev/mmcblk0p2`
+			sda2_start=$2
+			sda2_end=$3
+
+			# overlay partition
+			sda3_start=$((sda2_end+512+1))
+			sda3_end=$((sda3_start+overlay_size/sector_size))
+
+			# data partition
+			sda4_start=$((sda3_end+512+1))
+
+			# [_boot_|_rootfs_...1G...][cfg 1G][data...]
+			echo -ne "n\np\n\n${sda3_start}\n${sda3_end}\nn\np\n${sda4_start}\n\nw\n" | fdisk /dev/mmcblk0
+
+			partx -a /dev/mmcblk0
+			test -b /dev/mmcblk0p3 -a -b /dev/mmcblk0p4  || {
+				MAJOR="`ls -l /dev/mmcblk0 | grep '/dev/mmcblk0' | awk '{print $5}' | grep -o '[0-9]*'`"
+				test -n "$MAJOR" && {
+					rm -f /dev/mmcblk0p3
+					mknod /dev/mmcblk0p3 b $MAJOR 3
+					rm -f /dev/mmcblk0p4
+					mknod /dev/mmcblk0p4 b $MAJOR 4
+				}
+			}
+
+			# setup for fstab
+			if mount -t ext4 -o ro,noatime /dev/mmcblk0p4 /mnt; then
+				# /dev/sda4 has valid filesystem, no need to format
+				umount /mnt
+			else
+				test -b /dev/mmcblk0p4 && echo erase >/dev/mmcblk0p4
+			fi
+			mount -o remount,rw / && {
+				test -b /dev/mmcblk0p3 && rm -f /etc/sda.ready
+				mount -o remount,ro /
+			}
+		}
+
+		test -b /dev/mmcblk0p3 && {
+			test -f /etc/sda.ready || {
+				echo -ne 'y\n' | mkfs.ext4 /dev/mmcblk0p3
+			}
+		}
+		test -b /dev/mmcblk0p4 && [ "x`head -c5 /dev/mmcblk0p4`" = "xerase" ] && {
+			echo -ne 'y\n' | mkfs.ext4 /dev/mmcblk0p4
+		}
+	fi
+}
+
+boot_hook_add preinit_main do_disk_ready
