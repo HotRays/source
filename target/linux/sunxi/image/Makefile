@@ -29,26 +29,6 @@ define Build/sunxi-sdcard
 	rm -f $@.boot
 endef
 
-define Build/h6-sunxi-sdcard
-	rm -f $@.boot
-	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
-
-	rm -f $@.h6-boot.scr
-	mkimage -C none -A arm -T script -d ./h6-uEnv.txt $@.h6-boot.scr
-
-	mcopy -i $@.boot $@.h6-boot.scr ::boot.scr
-	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
-	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
-	./gen_sunxi_sdcard_img.sh $@ \
-		$@.boot \
-		$(IMAGE_ROOTFS) \
-		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		./h6-uboot-with-spl.bin
-	rm -f $@.boot
-	rm -f $@.h6-boot.scr
-endef
-
 # why \x00\x00\x00\x00 for zImage-initramfs
 define Device/Default
   PROFILES := Default
