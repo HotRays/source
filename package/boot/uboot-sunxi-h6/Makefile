@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/HotRays/u-boot.git
 PKG_SOURCE_DATE:=2018-04-19
-PKG_SOURCE_VERSION:=017278105e24acbf5f53437d9edb8791e1623c07
+PKG_SOURCE_VERSION:=14b04ed39c6055d147eda05addf5e62ef427967f
 
 PKG_VERSION:=2018.04.$(PKG_SOURCE_VERSION)
 
@@ -29,16 +29,16 @@ define U-Boot/Default
   HIDDEN:=1
 endef
 
-define U-Boot/orangepi_oneplus
+define U-Boot/tempe_h6v2
   BUILD_SUBTARGET:=cortexa53
-  NAME:=Xunlong Orange Pi OnePlus
-  BUILD_DEVICES:=sun50i-h6-orangepi-oneplus
-  DEPENDS:=+PACKAGE_u-boot-orangepi_oneplus:arm-trusted-firmware-sunxi-h6
+  NAME:=TEMPE H6 V2
+  BUILD_DEVICES:=sun50i-h6-tempe-h6v2
+  DEPENDS:=+PACKAGE_u-boot-tempe-h6v2:arm-trusted-firmware-sunxi-h6
   UENV:=h64
 endef
 
 UBOOT_TARGETS := \
-	orangepi_oneplus
+	tempe_h6v2
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

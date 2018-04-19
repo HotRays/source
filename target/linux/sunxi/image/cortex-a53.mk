@@ -48,16 +48,16 @@ endef
 
 TARGET_DEVICES += sun50i-h5-orangepi-zero-plus
 
-define Device/sun50i-h6-orangepi-oneplus
-  DEVICE_TITLE:=Xunlong Orange Pi OnePlus
-  SUPPORTED_DEVICES:=xunlong,h6-orangepi-oneplus
-  SUNXI_DTS:=allwinner/sun50i-h6-orangepi-oneplus
+define Device/sun50i-h6-tempe-h6v2
+  DEVICE_TITLE:=Tempe H6 V2
+  SUPPORTED_DEVICES:=tempe,h6-tempe-h6v2
+  SUNXI_DTS:=allwinner/sun50i-h6-tempe-h6v2
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils
 endef
 
-TARGET_DEVICES += sun50i-h6-orangepi-oneplus
+TARGET_DEVICES += sun50i-h6-tempe-h6v2
 
 define Device/sun50i-h6-orangepi-lite2
   DEVICE_TITLE:=Xunlong Orange Pi Lite2

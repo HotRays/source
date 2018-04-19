@@ -54,14 +54,14 @@ CONFIG_TARGET_sunxi_cortexa53=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-nanopi-neo-plus2 is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-pine64-plus is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-sopine-baseboard is not set
+CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-h6v2=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-orangepi-lite2 is not set
-CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-orangepi-oneplus=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-orangepi-zero-plus is not set
 CONFIG_HAS_SUBTARGETS=y
 CONFIG_HAS_DEVICES=y
 CONFIG_TARGET_BOARD="sunxi"
 CONFIG_TARGET_SUBTARGET="cortexa53"
-CONFIG_TARGET_PROFILE="DEVICE_sun50i-h6-orangepi-oneplus"
+CONFIG_TARGET_PROFILE="DEVICE_sun50i-h6-tempe-h6v2"
 CONFIG_TARGET_ARCH_PACKAGES="aarch64_cortex-a53"
 CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
 CONFIG_CPU_TYPE="cortex-a53"
@@ -2331,6 +2331,8 @@ CONFIG_PACKAGE_wireless-tools=y
 # Boot Loaders
 #
 # CONFIG_PACKAGE_arm-trusted-firmware-sunxi is not set
+CONFIG_PACKAGE_arm-trusted-firmware-sunxi-h6=y
+CONFIG_PACKAGE_u-boot-tempe_h6v2=y
 
 #
 # Development
