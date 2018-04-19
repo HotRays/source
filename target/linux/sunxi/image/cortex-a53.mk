@@ -50,7 +50,7 @@ TARGET_DEVICES += sun50i-h5-orangepi-zero-plus
 
 define Device/sun50i-h6-tempe-h6v2
   DEVICE_TITLE:=Tempe H6 V2
-  SUPPORTED_DEVICES:=tempe,h6-tempe-h6v2
+  SUPPORTED_DEVICES:=tempe,tempe-h6v2
   SUNXI_DTS:=allwinner/sun50i-h6-tempe-h6v2
   KERNEL_NAME := Image
   KERNEL := kernel-bin
@@ -59,17 +59,15 @@ endef
 
 TARGET_DEVICES += sun50i-h6-tempe-h6v2
 
-define Device/sun50i-h6-orangepi-lite2
-  DEVICE_TITLE:=Xunlong Orange Pi Lite2
-  SUPPORTED_DEVICES:=xunlong,h6-orangepi-lite2
-  SUNXI_DTS:=allwinner/sun50i-h6-orangepi-lite2
+define Device/sun50i-h6-tempe-lite2
+  DEVICE_TITLE:=TEMPE Lite 2
+  SUPPORTED_DEVICES:=tempe,tempe-lite2
+  SUNXI_DTS:=allwinner/sun50i-h6-tempe-lite2
   KERNEL_NAME := Image
   KERNEL := kernel-bin
-  IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := h6-sunxi-sdcard | append-metadata | gzip
-  DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils
+  DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils kmod-brcmfmac
 endef
 
-TARGET_DEVICES += sun50i-h6-orangepi-lite2
+TARGET_DEVICES += sun50i-h6-tempe-lite2
 
 endif

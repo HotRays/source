@@ -54,8 +54,8 @@ CONFIG_TARGET_sunxi_cortexa53=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-nanopi-neo-plus2 is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-pine64-plus is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-sopine-baseboard is not set
+# CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-lite2 is not set
 CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-h6v2=y
-# CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-orangepi-lite2 is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-orangepi-zero-plus is not set
 CONFIG_HAS_SUBTARGETS=y
 CONFIG_HAS_DEVICES=y
@@ -2377,23 +2377,17 @@ CONFIG_PACKAGE_objdump=y
 # CONFIG_PACKAGE_ar3k-firmware is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca4019 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca4019-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca4019-ct-htt is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca6174 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9887 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9887-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca9887-ct-htt is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9888 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9888-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca9888-ct-htt is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca988x is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca988x-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca988x-ct-htt is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9984 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca9984-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca9984-ct-htt is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca99x0 is not set
 # CONFIG_PACKAGE_ath10k-firmware-qca99x0-ct is not set
-# CONFIG_PACKAGE_ath10k-firmware-qca99x0-ct-htt is not set
 # CONFIG_PACKAGE_ath6k-firmware is not set
 # CONFIG_PACKAGE_ath9k-htc-firmware is not set
 # CONFIG_PACKAGE_b43legacy-firmware is not set
@@ -2442,6 +2436,7 @@ CONFIG_PACKAGE_mt7601u-firmware=y
 # CONFIG_PACKAGE_p54-usb-firmware is not set
 # CONFIG_PACKAGE_prism54-firmware is not set
 # CONFIG_PACKAGE_r8169-firmware is not set
+# CONFIG_PACKAGE_rs9113-firmware is not set
 # CONFIG_PACKAGE_rt2800-pci-firmware is not set
 CONFIG_PACKAGE_rt2800-usb-firmware=y
 # CONFIG_PACKAGE_rt61-pci-firmware is not set
@@ -3014,7 +3009,6 @@ CONFIG_PACKAGE_kmod-usb3=y
 # Wireless Drivers
 #
 # CONFIG_PACKAGE_kmod-ath is not set
-# CONFIG_PACKAGE_kmod-ath10k-ct is not set
 # CONFIG_PACKAGE_kmod-ath6kl-sdio is not set
 # CONFIG_PACKAGE_kmod-ath6kl-usb is not set
 # CONFIG_PACKAGE_kmod-ath9k-htc is not set
@@ -3039,6 +3033,9 @@ CONFIG_PACKAGE_kmod-mt7601u=y
 # CONFIG_PACKAGE_kmod-net-rtl8192su is not set
 # CONFIG_PACKAGE_kmod-p54-common is not set
 # CONFIG_PACKAGE_kmod-p54-usb is not set
+# CONFIG_PACKAGE_kmod-rsi91x is not set
+# CONFIG_PACKAGE_kmod-rsi91x-sdio is not set
+# CONFIG_PACKAGE_kmod-rsi91x-usb is not set
 CONFIG_PACKAGE_kmod-rt2500-usb=y
 CONFIG_PACKAGE_kmod-rt2800-lib=y
 CONFIG_PACKAGE_kmod-rt2800-usb=y
@@ -5434,7 +5431,6 @@ CONFIG_PACKAGE_wpad=y
 #
 # CONFIG_PACKAGE_fconfig is not set
 CONFIG_PACKAGE_uboot-envtools=y
-# CONFIG_UBOOT_ENVTOOLS_UBI is not set
 
 #
 # Compression

@@ -1,4 +1,4 @@
-From d5a3013b8b7fba20f200e33b60a1232e2fd4f2e2 Mon Sep 17 00:00:00 2001
+From c4b15f39937fea35b32f33f499154ba902bcb43e Mon Sep 17 00:00:00 2001
 From: Chen Minqiang <ptpt52@gmail.com>
 Date: Thu, 19 Apr 2018 11:45:41 +0800
 Subject: [PATCH 3/4] mdio_bus reset delay fixup
