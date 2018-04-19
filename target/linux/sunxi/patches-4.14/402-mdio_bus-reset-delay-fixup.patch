@@ -1,0 +1,24 @@
+From d5a3013b8b7fba20f200e33b60a1232e2fd4f2e2 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Thu, 19 Apr 2018 11:45:41 +0800
+Subject: [PATCH 3/4] mdio_bus reset delay fixup
+
+---
+ drivers/net/phy/mdio_bus.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/phy/mdio_bus.c b/drivers/net/phy/mdio_bus.c
+index 2df7b62..6c14b17 100644
+--- a/drivers/net/phy/mdio_bus.c
++++ b/drivers/net/phy/mdio_bus.c
+@@ -365,6 +365,7 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
+ 		gpiod_set_value_cansleep(gpiod, 1);
+ 		udelay(bus->reset_delay_us);
+ 		gpiod_set_value_cansleep(gpiod, 0);
++		udelay(bus->reset_delay_us);
+ 	}
+ 
+ 	if (bus->reset)
+-- 
+2.7.4
+

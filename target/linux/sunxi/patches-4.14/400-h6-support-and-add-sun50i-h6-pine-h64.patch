@@ -1,7 +1,7 @@
 From 6169e9f4e65400b4aa053c7dc652802214ce5e5d Mon Sep 17 00:00:00 2001
 From: Chen Minqiang <ptpt52@gmail.com>
 Date: Tue, 17 Apr 2018 14:13:47 +0800
-Subject: [PATCH 1/2] h6 support and add sun50i-h6-pine-h64
+Subject: [PATCH 1/4] h6 support and add sun50i-h6-pine-h64
 
 ---
  .../devicetree/bindings/clock/sunxi-ccu.txt        |    4 +-

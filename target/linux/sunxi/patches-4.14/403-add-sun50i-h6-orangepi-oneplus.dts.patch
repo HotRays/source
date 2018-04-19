@@ -1,32 +1,31 @@
-From 72dda8658fd67b3c1b71685ed95aa0dd94f5d918 Mon Sep 17 00:00:00 2001
+From fa02e87dc243ecaf567a719b573e3d80decfde46 Mon Sep 17 00:00:00 2001
 From: Chen Minqiang <ptpt52@gmail.com>
-Date: Tue, 17 Apr 2018 14:35:00 +0800
-Subject: [PATCH 2/4] add sun50i-h6-orangepi-lite2
+Date: Thu, 19 Apr 2018 11:48:04 +0800
+Subject: [PATCH 4/4] add sun50i-h6-orangepi-oneplus.dts
 
 ---
  arch/arm64/boot/dts/allwinner/Makefile             |   1 +
- .../dts/allwinner/sun50i-h6-orangepi-lite2.dts     | 279 +++++++++++++++++++++
- arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi       |   8 +
- 3 files changed, 288 insertions(+)
- create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-lite2.dts
+ .../dts/allwinner/sun50i-h6-orangepi-oneplus.dts   | 279 +++++++++++++++++++++
+ 2 files changed, 280 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-oneplus.dts
 
 diff --git a/arch/arm64/boot/dts/allwinner/Makefile b/arch/arm64/boot/dts/allwinner/Makefile
-index 94d9dc7..7884c0a 100644
+index 7884c0a..b95ef01 100644
 --- a/arch/arm64/boot/dts/allwinner/Makefile
 +++ b/arch/arm64/boot/dts/allwinner/Makefile
-@@ -12,6 +12,7 @@ dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-orangepi-zero-plus2.dtb
- dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-nanopi-neo2.dtb
+@@ -13,6 +13,7 @@ dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-nanopi-neo2.dtb
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-nanopi-neo-plus2.dtb
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h6-pine-h64.dtb
-+dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h6-orangepi-lite2.dtb
+ dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h6-orangepi-lite2.dtb
++dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h6-orangepi-oneplus.dtb
  
  always		:= $(dtb-y)
  subdir-y	:= $(dts-dirs)
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-lite2.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-lite2.dts
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-oneplus.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-oneplus.dts
 new file mode 100644
-index 0000000..0ad3507
+index 0000000..5c85ed5
 --- /dev/null
-+++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-lite2.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-orangepi-oneplus.dts
 @@ -0,0 +1,279 @@
 +/*
 + * Copyright (c) 2017 Icenowy Zheng <icenowy@aosc.io>
@@ -41,8 +40,8 @@ index 0000000..0ad3507
 +#include <dt-bindings/gpio/gpio.h>
 +
 +/ {
-+	model = "Xunlong Orange Pi Lite 2";
-+	compatible = "xunlong,orangepi-lite2", "allwinner,sun50i-h6";
++	model = "Xunlong Orange Pi OnePlus";
++	compatible = "xunlong,orangepi-oneplus", "allwinner,sun50i-h6";
 +
 +	aliases {
 +		ethernet0 = &emac;
@@ -307,25 +306,6 @@ index 0000000..0ad3507
 +	phy-supply = <&reg_cldo1>;
 +	status = "okay";
 +};
-diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
-index 2c0ecf7..e495e92 100644
---- a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
-+++ b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
-@@ -174,6 +174,14 @@
- 				bias-pull-up;
- 			};
- 
-+			mmc1_pins: mmc1-pins {
-+				pins = "PG0", "PG1", "PG2", "PG3",
-+				       "PG4", "PG5";
-+				function = "mmc1";
-+				drive-strength = <30>;
-+				bias-pull-up;
-+			};
-+
- 			mmc2_pins: mmc2-pins {
- 				pins = "PC1", "PC4", "PC5", "PC6",
- 				       "PC7", "PC8", "PC9", "PC10",
 -- 
 2.7.4
 
