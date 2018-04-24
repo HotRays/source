@@ -1,0 +1,22 @@
+#!/bin/sh
+
+[ "x$INTERFACE" == "xwan" ] || exit 0
+
+case "$ACTION" in
+	ifup|ifup-failed)
+		test -n "$DEVICE" || DEVICE=`uci get network.wan.ifname`
+		case "$DEVICE" in
+			eth0)
+				ifconfig $DEVICE:1 169.254.254.254 netmask 255.255.0.0
+				iptables -D INPUT -i $DEVICE -d 169.254.254.254 -j ACCEPT 2>/dev/null
+				iptables -I INPUT -i $DEVICE -d 169.254.254.254 -j ACCEPT 2>/dev/null
+			;;
+			*)
+			;;
+		esac
+	;;
+	*)
+	;;
+esac
+
+exit 0
