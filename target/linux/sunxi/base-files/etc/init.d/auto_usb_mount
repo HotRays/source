@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=96
+
+auto_mount_boot()
+{
+	while :; do
+		mount | grep overlayfs | grep 'workdir=/overlay/work' >/dev/null  2>&1
+		test $? -eq 0 && break
+		sleep 2
+	done
+	for DEV in `ls /dev/sd*[0-9]* 2>/dev/null`; do
+		[ x$DEV = x`mount | grep "$DEV " | awk '{print $1}'` ] && continue
+
+		ddir=/mnt/`basename $DEV`
+		mkdir -p "$ddir" || continue
+		if mount "$DEV" "$ddir"; then
+			logger -t "auto_usb_mount" "boot auto mount $DEV to $ddir success!"
+		else
+			logger -t "auto_usb_mount" "boot mount $DEV to $ddir failed!"
+		fi
+	done
+}
+
+boot() {
+	auto_mount_boot &
+}

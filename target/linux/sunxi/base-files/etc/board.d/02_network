@@ -19,7 +19,7 @@ case "$(board_name)" in
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
 "tempe,tempe-h6v2")
-	ucidef_set_interface_lan "usb0 eth0"
+	ucidef_set_interfaces_lan_wan "usb0" "eth0"
 	;;
 "tempe,tempe-lite2")
 	ucidef_set_interface_lan "usb0"
