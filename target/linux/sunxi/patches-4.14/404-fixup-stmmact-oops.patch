@@ -1,0 +1,44 @@
+From ba937be29151bcbbc33d483496b7952b8caebf54 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Wed, 2 May 2018 10:14:31 +0800
+Subject: [PATCH 1/2] fixup stmmact oops
+
+---
+ drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
+index ce41794..bf67da4 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
+@@ -643,7 +643,7 @@ static int sun8i_dwmac_reset(struct stmmac_priv *priv)
+ 	 * need more if no cable plugged. 100ms seems OK
+ 	 */
+ 	err = readl_poll_timeout(priv->ioaddr + EMAC_BASIC_CTL1, v,
+-				 !(v & 0x01), 100, 100000);
++				 !(v & 0x01), 100, 500000);
+ 
+ 	if (err) {
+ 		dev_err(priv->device, "EMAC reset timeout\n");
+@@ -1075,13 +1075,16 @@ static int sun8i_dwmac_probe(struct platform_device *pdev)
+ 		}
+ 	} else {
+ 		ret = sun8i_dwmac_reset(priv);
+-		if (ret)
+-			goto dwmac_exit;
++		if (ret) {
++			goto dwmac_drv_exit;
++		}
+ 	}
+ 
+ 	return ret;
+ dwmac_mux:
+ 	sun8i_dwmac_unset_syscon(gmac);
++dwmac_drv_exit:
++	stmmac_dvr_remove(&pdev->dev);
+ dwmac_exit:
+ 	sun8i_dwmac_exit(pdev, plat_dat->bsp_priv);
+ return ret;
+-- 
+2.14.2
+
