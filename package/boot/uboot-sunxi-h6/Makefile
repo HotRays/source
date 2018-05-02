@@ -33,7 +33,7 @@ define U-Boot/tempe_h6v2
   BUILD_SUBTARGET:=cortexa53
   NAME:=TEMPE H6 V2
   BUILD_DEVICES:=sun50i-h6-tempe-h6v2
-  DEPENDS:=+PACKAGE_u-boot-tempe-h6v2:arm-trusted-firmware-sunxi-h6
+  DEPENDS:=+PACKAGE_u-boot-tempe_h6v2:arm-trusted-firmware-sunxi-h6
   UENV:=h64
 endef
 
@@ -41,7 +41,7 @@ define U-Boot/tempe_lite2
   BUILD_SUBTARGET:=cortexa53
   NAME:=TEMPE Lite 2
   BUILD_DEVICES:=sun50i-h6-tempe-lite2
-  DEPENDS:=+PACKAGE_u-boot-tempe-lite2:arm-trusted-firmware-sunxi-h6
+  DEPENDS:=+PACKAGE_u-boot-tempe_lite2:arm-trusted-firmware-sunxi-h6
   UENV:=h64
 endef
 
@@ -49,14 +49,14 @@ define U-Boot/tempe_a55
   BUILD_SUBTARGET:=cortexa53
   NAME:=TEMPE A55
   BUILD_DEVICES:=sun50i-h6-tempe-a55
-  DEPENDS:=+PACKAGE_u-boot-tempe-a55:arm-trusted-firmware-sunxi-h6
+  DEPENDS:=+PACKAGE_u-boot-tempe_a55:arm-trusted-firmware-sunxi-h6
   UENV:=h64-a55
 endef
 
 UBOOT_TARGETS := \
 	tempe_h6v2 \
 	tempe_lite2 \
-  tempe_a55
+	tempe_a55
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
