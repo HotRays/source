@@ -68,6 +68,16 @@ endef
 
 $(eval $(call KernelPackage,sun4i-emac))
 
+define KernelPackage/sun8i-emac
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=AllWinner H6 EMAC Ethernet support
+  DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy
+  KCONFIG:=CONFIG_SUN8I_EMAC
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun8i-emac.ko
+  AUTOLOAD:=$(call AutoProbe,sun8i-emac)
+endef
+
+$(eval $(call KernelPackage,sun8i-emac))
 
 define KernelPackage/sound-soc-sunxi
   TITLE:=AllWinner built-in SoC sound support

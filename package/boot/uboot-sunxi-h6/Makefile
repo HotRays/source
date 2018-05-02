@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/HotRays/u-boot.git
 PKG_SOURCE_DATE:=2018-04-19
-PKG_SOURCE_VERSION:=cb12036657af97f12e924944285c2798bb3d97fb
+PKG_SOURCE_VERSION:=ba701d669e1923233da03874166fd5b5f800b969
 
 PKG_VERSION:=2018.04.$(PKG_SOURCE_VERSION)
 
@@ -45,9 +45,18 @@ define U-Boot/tempe_lite2
   UENV:=h64
 endef
 
+define U-Boot/tempe_a55
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=TEMPE A55
+  BUILD_DEVICES:=sun50i-h6-tempe-a55
+  DEPENDS:=+PACKAGE_u-boot-tempe-a55:arm-trusted-firmware-sunxi-h6
+  UENV:=h64-a55
+endef
+
 UBOOT_TARGETS := \
 	tempe_h6v2 \
-	tempe_lite2
+	tempe_lite2 \
+  tempe_a55
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

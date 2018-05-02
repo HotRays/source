@@ -70,4 +70,15 @@ endef
 
 TARGET_DEVICES += sun50i-h6-tempe-lite2
 
+define Device/sun50i-h6-tempe-a55
+  DEVICE_TITLE:=TEMPE A55
+  SUPPORTED_DEVICES:=tempe,tempe-a55
+  SUNXI_DTS:=allwinner/sun50i-h6-tempe-a55
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+  DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils kmod-brcmfmac
+endef
+
+TARGET_DEVICES += sun50i-h6-tempe-a55
+
 endif
