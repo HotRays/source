@@ -15,7 +15,6 @@ define Profile/Default
 	kmod-rtl8192cu \
 	kmod-rtl8xxxu \
 	kmod-sun4i-emac \
-	kmod-sun8i-emac \
 	rtl8188eu-firmware \
 	swconfig \
 	wpad-mini

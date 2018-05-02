@@ -54,6 +54,7 @@ CONFIG_TARGET_sunxi_cortexa53=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-nanopi-neo-plus2 is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-pine64-plus is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-a64-sopine-baseboard is not set
+# CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-a55 is not set
 CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-lite2=y
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-h6v2 is not set
 # CONFIG_TARGET_sunxi_cortexa53_DEVICE_sun50i-h5-orangepi-zero-plus is not set
@@ -2789,12 +2790,12 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 CONFIG_PACKAGE_kmod-ifb=y
 CONFIG_PACKAGE_kmod-libphy=y
 CONFIG_PACKAGE_kmod-macvlan=y
-# CONFIG_PACKAGE_kmod-mii is not set
+CONFIG_PACKAGE_kmod-mii=y
 CONFIG_PACKAGE_kmod-of-mdio=y
 # CONFIG_PACKAGE_kmod-phy-broadcom is not set
 # CONFIG_PACKAGE_kmod-siit is not set
 # CONFIG_PACKAGE_kmod-spi-ks8995 is not set
-CONFIG_PACKAGE_kmod-sun4i-emac=y
+# CONFIG_PACKAGE_kmod-sun4i-emac is not set
 # CONFIG_PACKAGE_kmod-swconfig is not set
 # CONFIG_PACKAGE_kmod-switch-ip17xx is not set
 # CONFIG_PACKAGE_kmod-switch-mvsw61xx is not set
