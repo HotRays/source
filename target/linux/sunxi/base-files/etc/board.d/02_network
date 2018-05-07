@@ -25,7 +25,7 @@ case "$(board_name)" in
 	ucidef_set_interface_lan "usb0"
 	;;
 "tempe,tempe-a55")
-	ucidef_set_interface_lan "usb0 eth0"
+	ucidef_set_interface_lan "usb0"
 	;;
 *)
 	ucidef_set_interface_lan 'eth0'
