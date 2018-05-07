@@ -23,11 +23,11 @@ FAILSAFE="$7"
 head=4
 sect=63
 
-ALI=1024
-FAILSAFEOFFSET=$(($ALI * 1024 / 512))
-test -n "$FAILSAFE" && ALI=$((1024*32))
-set `ptgen -o $OUTPUT -h $head -s $sect -l ${ALI} -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M`
+HPAD=
+test -n "$FAILSAFE" && HPAD=$((1024*32))
+set `ptgen -o $OUTPUT -h $head -s $sect ${HPAD:+-L $HPAD} -l 1024 -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M`
 
+FAILSAFEOFFSET=$((1024 * 1024 / 512))
 BOOTOFFSET="$(($1 / 512))"
 BOOTSIZE="$(($2 / 512))"
 ROOTFSOFFSET="$(($3 / 512))"
