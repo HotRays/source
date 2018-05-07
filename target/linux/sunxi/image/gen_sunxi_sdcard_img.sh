@@ -25,7 +25,7 @@ sect=63
 
 ALI=1024
 FAILSAFEOFFSET=$(($ALI * 1024 / 512))
-test -n "$FAILSAFE" && ALI=$((1024*64))
+test -n "$FAILSAFE" && ALI=$((1024*32))
 set `ptgen -o $OUTPUT -h $head -s $sect -l ${ALI} -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M`
 
 BOOTOFFSET="$(($1 / 512))"

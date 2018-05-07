@@ -55,7 +55,7 @@ define Device/sun50i-h6-tempe-h6v2
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils
-  FAILSAFE_IMG := failsafe.img
+  FAILSAFE_IMG := failsafe-h6.bin
   IMAGES := sdcard-failsafe.img.gz
   IMAGE/sdcard-failsafe.img.gz := sunxi-sdcard-failsafe | append-metadata | gzip
 endef
@@ -69,7 +69,7 @@ define Device/sun50i-h6-tempe-lite2
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils kmod-brcmfmac
-  FAILSAFE_IMG := failsafe.img
+  FAILSAFE_IMG := failsafe-h6.bin
   IMAGES := sdcard-failsafe.img.gz
   IMAGE/sdcard-failsafe.img.gz := sunxi-sdcard-failsafe | append-metadata | gzip
 endef
@@ -83,7 +83,7 @@ define Device/sun50i-h6-tempe-a55
   KERNEL_NAME := Image
   KERNEL := kernel-bin
   DEVICE_PACKAGES := blockd kmod-fs-ext4 mkf2fs e2fsprogs fdisk partx-utils kmod-brcmfmac
-  FAILSAFE_IMG := failsafe.img
+  FAILSAFE_IMG := failsafe-h6.bin
   IMAGES := sdcard-failsafe.img.gz
   IMAGE/sdcard-failsafe.img.gz := sunxi-sdcard-failsafe | append-metadata | gzip
 endef
