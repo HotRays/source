@@ -13,6 +13,23 @@ FAT32_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32
 
 KERNEL_LOADADDR:=0x40008000
 
+define Build/sunxi-sdcard-failsafe
+	rm -f $@.boot
+	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
+
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
+	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
+	./gen_sunxi_sdcard_img.sh $@ \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin \
+		./$(FAILSAFE_IMG)
+	rm -f $@.boot
+endef
+
 define Build/sunxi-sdcard
 	rm -f $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
