@@ -1,0 +1,5 @@
+config LEDS_AW9523B
+        tristate "AWININC aw9523b LED support"
+        depends on I2C
+        help
+          Say yes here to enable support for the awininc aw9523b i2c LEDs.
