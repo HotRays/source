@@ -68,6 +68,27 @@ endef
 
 $(eval $(call KernelPackage,sun4i-emac))
 
+define KernelPackage/dwmac-sun8i
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=SUN50I H6 EMAC Ethernet support
+  DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy +kmod-mdio
+  KCONFIG:=CONFIG_DWMAC_SUN8I=m \
+  CONFIG_MDIO_BUS_MUX \
+  CONFIG_STMMAC_ETH \
+  CONFIG_STMMAC_PLATFORM \
+  CONFIG_DWMAC_DWC_QOS_ETH=n \
+  CONFIG_DWMAC_GENERIC=n \
+  CONFIG_DWMAC_SUNXI=n \
+  CONFIG_MDIO_SUN4I=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko \
+  $(LINUX_DIR)/drivers/net/phy/mdio-mux.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac.ko
+  AUTOLOAD:=$(call AutoProbe,dwmac-sun8i)
+endef
+
+$(eval $(call KernelPackage,dwmac-sun8i))
+
 define KernelPackage/sound-soc-sunxi
   TITLE:=AllWinner built-in SoC sound support
   KCONFIG:=CONFIG_SND_SUN4I_CODEC
@@ -82,3 +103,14 @@ define KernelPackage/sound-soc-sunxi/description
 endef
 
 $(eval $(call KernelPackage,sound-soc-sunxi))
+
+define KernelPackage/GobiNet
+  SUBMENU:=$(USB_MENU)
+  TITLE:=QCOM GobiNet LTE/CDMA support
+  DEPENDS:=@TARGET_sunxi:TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-a55 +kmod-usb-net $(1)
+  KCONFIG:=CONFIG_USB_NET_GOBINET=m
+  FILES:=$(LINUX_DIR)/drivers/net/usb/GobiNet.ko
+  AUTOLOAD:=$(call AutoProbe,GobiNet)
+endef
+
+$(eval $(call KernelPackage,GobiNet))

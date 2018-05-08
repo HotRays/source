@@ -181,11 +181,11 @@ CONFIG_KERNEL_ENABLE_DEFAULT_TRACERS=y
 # CONFIG_KERNEL_FUNCTION_TRACER is not set
 CONFIG_KERNEL_DEBUG_KERNEL=y
 CONFIG_KERNEL_DEBUG_INFO=y
-# CONFIG_KERNEL_DYNAMIC_DEBUG is not set
+CONFIG_KERNEL_DYNAMIC_DEBUG=y
 # CONFIG_KERNEL_KPROBES is not set
 # CONFIG_KERNEL_AIO is not set
 # CONFIG_KERNEL_FHANDLE is not set
-# CONFIG_KERNEL_FANOTIFY is not set
+CONFIG_KERNEL_FANOTIFY=y
 # CONFIG_KERNEL_BLK_DEV_BSG is not set
 CONFIG_KERNEL_MAGIC_SYSRQ=y
 # CONFIG_KERNEL_DEBUG_PINCTRL is not set
@@ -371,6 +371,7 @@ CONFIG_FEED_luci=y
 CONFIG_FEED_routing=y
 CONFIG_FEED_telephony=y
 CONFIG_FEED_ptpt52=y
+CONFIG_FEED_custom=y
 
 #
 # Base system
@@ -2653,6 +2654,7 @@ CONFIG_PACKAGE_kmod-i2c-gpio-custom=y
 #
 # LED modules
 #
+CONFIG_PACKAGE_kmod-leds-aw9523b=y
 CONFIG_PACKAGE_kmod-leds-gpio=y
 # CONFIG_PACKAGE_kmod-leds-pca963x is not set
 CONFIG_PACKAGE_kmod-ledtrig-default-on=y
@@ -2780,9 +2782,9 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 # CONFIG_PACKAGE_kmod-nfnetlink-log is not set
 # CONFIG_PACKAGE_kmod-nfnetlink-queue is not set
 # CONFIG_PACKAGE_kmod-nft-arp is not set
-# CONFIG_PACKAGE_kmod-nft-bridge is not set
-# CONFIG_PACKAGE_kmod-nft-core is not set
-# CONFIG_PACKAGE_kmod-nft-nat is not set
+CONFIG_PACKAGE_kmod-nft-bridge=y
+CONFIG_PACKAGE_kmod-nft-core=y
+CONFIG_PACKAGE_kmod-nft-nat=y
 # CONFIG_PACKAGE_kmod-nft-nat6 is not set
 # CONFIG_PACKAGE_kmod-nft-offload is not set
 
@@ -2790,6 +2792,7 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 # Network Devices
 #
 # CONFIG_PACKAGE_kmod-dummy is not set
+CONFIG_PACKAGE_kmod-dwmac-sun8i=y
 # CONFIG_PACKAGE_kmod-ethoc is not set
 # CONFIG_PACKAGE_kmod-gigaset is not set
 # CONFIG_PACKAGE_kmod-hfcmulti is not set
@@ -2837,6 +2840,7 @@ CONFIG_PACKAGE_kmod-l2tp=y
 # CONFIG_PACKAGE_kmod-l2tp-eth is not set
 # CONFIG_PACKAGE_kmod-l2tp-ip is not set
 # CONFIG_PACKAGE_kmod-macsec is not set
+CONFIG_PACKAGE_kmod-mdio=y
 # CONFIG_PACKAGE_kmod-misdn is not set
 # CONFIG_PACKAGE_kmod-mpls is not set
 CONFIG_PACKAGE_kmod-ppp=y
@@ -2953,12 +2957,13 @@ CONFIG_PACKAGE_kmod-mmc=y
 #
 # USB Support
 #
+CONFIG_PACKAGE_kmod-GobiNet=y
 # CONFIG_PACKAGE_kmod-usb-acm is not set
 # CONFIG_PACKAGE_kmod-usb-atm is not set
 # CONFIG_PACKAGE_kmod-usb-cm109 is not set
 CONFIG_PACKAGE_kmod-usb-core=y
-# CONFIG_PACKAGE_kmod-usb-dwc2 is not set
-# CONFIG_PACKAGE_kmod-usb-dwc3 is not set
+CONFIG_PACKAGE_kmod-usb-dwc2=y
+CONFIG_PACKAGE_kmod-usb-dwc3=y
 CONFIG_PACKAGE_kmod-usb-ehci=y
 CONFIG_PACKAGE_kmod-usb-gadget=y
 # CONFIG_PACKAGE_kmod-usb-gadget-ehci-debug is not set
@@ -2968,16 +2973,62 @@ CONFIG_PACKAGE_kmod-usb-gadget-eth=y
 # CONFIG_PACKAGE_kmod-usb-hid is not set
 # CONFIG_PACKAGE_kmod-usb-ledtrig-usbport is not set
 CONFIG_PACKAGE_kmod-usb-lib-composite=y
-# CONFIG_PACKAGE_kmod-usb-net is not set
+CONFIG_PACKAGE_kmod-usb-net=y
+# CONFIG_PACKAGE_kmod-usb-net-asix is not set
+# CONFIG_PACKAGE_kmod-usb-net-asix-ax88179 is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-eem is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-ether is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-mbim is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-ncm is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-subset is not set
+# CONFIG_PACKAGE_kmod-usb-net-dm9601-ether is not set
+# CONFIG_PACKAGE_kmod-usb-net-hso is not set
+# CONFIG_PACKAGE_kmod-usb-net-huawei-cdc-ncm is not set
+# CONFIG_PACKAGE_kmod-usb-net-ipheth is not set
+# CONFIG_PACKAGE_kmod-usb-net-kalmia is not set
+# CONFIG_PACKAGE_kmod-usb-net-kaweth is not set
+# CONFIG_PACKAGE_kmod-usb-net-mcs7830 is not set
+# CONFIG_PACKAGE_kmod-usb-net-pegasus is not set
+# CONFIG_PACKAGE_kmod-usb-net-pl is not set
+CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y
+# CONFIG_PACKAGE_kmod-usb-net-rndis is not set
+# CONFIG_PACKAGE_kmod-usb-net-rtl8150 is not set
+# CONFIG_PACKAGE_kmod-usb-net-rtl8152 is not set
+# CONFIG_PACKAGE_kmod-usb-net-sierrawireless is not set
+# CONFIG_PACKAGE_kmod-usb-net-smsc95xx is not set
+# CONFIG_PACKAGE_kmod-usb-net-sr9700 is not set
 CONFIG_PACKAGE_kmod-usb-ohci=y
 # CONFIG_PACKAGE_kmod-usb-printer is not set
-# CONFIG_PACKAGE_kmod-usb-serial is not set
+CONFIG_PACKAGE_kmod-usb-serial=y
+# CONFIG_PACKAGE_kmod-usb-serial-ark3116 is not set
+# CONFIG_PACKAGE_kmod-usb-serial-belkin is not set
+# CONFIG_PACKAGE_kmod-usb-serial-ch341 is not set
+# CONFIG_PACKAGE_kmod-usb-serial-cp210x is not set
+# CONFIG_PACKAGE_kmod-usb-serial-cypress-m8 is not set
+# CONFIG_PACKAGE_kmod-usb-serial-dmx_usb_module is not set
+# CONFIG_PACKAGE_kmod-usb-serial-edgeport is not set
+# CONFIG_PACKAGE_kmod-usb-serial-ftdi is not set
+# CONFIG_PACKAGE_kmod-usb-serial-garmin is not set
+# CONFIG_PACKAGE_kmod-usb-serial-ipw is not set
+# CONFIG_PACKAGE_kmod-usb-serial-keyspan is not set
+# CONFIG_PACKAGE_kmod-usb-serial-mct is not set
+# CONFIG_PACKAGE_kmod-usb-serial-mos7720 is not set
+CONFIG_PACKAGE_kmod-usb-serial-option=y
+# CONFIG_PACKAGE_kmod-usb-serial-oti6858 is not set
+# CONFIG_PACKAGE_kmod-usb-serial-pl2303 is not set
+# CONFIG_PACKAGE_kmod-usb-serial-qualcomm is not set
+# CONFIG_PACKAGE_kmod-usb-serial-sierrawireless is not set
+# CONFIG_PACKAGE_kmod-usb-serial-simple is not set
+# CONFIG_PACKAGE_kmod-usb-serial-ti-usb is not set
+# CONFIG_PACKAGE_kmod-usb-serial-visor is not set
+CONFIG_PACKAGE_kmod-usb-serial-wwan=y
+# CONFIG_PACKAGE_kmod-usb-serial-xr_usb_serial_common is not set
 CONFIG_PACKAGE_kmod-usb-storage=y
 CONFIG_PACKAGE_kmod-usb-storage-extras=y
 CONFIG_PACKAGE_kmod-usb-storage-uas=y
 # CONFIG_PACKAGE_kmod-usb-test is not set
 # CONFIG_PACKAGE_kmod-usb-uhci is not set
-# CONFIG_PACKAGE_kmod-usb-wdm is not set
+CONFIG_PACKAGE_kmod-usb-wdm=y
 # CONFIG_PACKAGE_kmod-usb-yealink is not set
 CONFIG_PACKAGE_kmod-usb2=y
 CONFIG_PACKAGE_kmod-usb3=y
@@ -4159,6 +4210,7 @@ CONFIG_PACKAGE_luci-app-ntpc=y
 # CONFIG_PACKAGE_luci-app-olsr-viz is not set
 CONFIG_PACKAGE_luci-app-openvpn=y
 # CONFIG_PACKAGE_luci-app-p910nd is not set
+# CONFIG_PACKAGE_luci-app-pagekitec is not set
 # CONFIG_PACKAGE_luci-app-polipo is not set
 # CONFIG_PACKAGE_luci-app-privoxy is not set
 # CONFIG_PACKAGE_luci-app-qos is not set
@@ -4827,6 +4879,7 @@ CONFIG_PACKAGE_ip-full=y
 CONFIG_PACKAGE_mwan3=y
 # CONFIG_PACKAGE_nstat is not set
 # CONFIG_PACKAGE_olsrd is not set
+# CONFIG_PACKAGE_prince is not set
 # CONFIG_PACKAGE_quagga is not set
 # CONFIG_PACKAGE_rdma is not set
 # CONFIG_PACKAGE_relayd is not set
@@ -5374,6 +5427,44 @@ CONFIG_PACKAGE_wpad=y
 # CONFIG_PACKAGE_xinetd is not set
 
 #
+# Ptpt52
+#
+
+#
+# Base config setting for this board
+#
+# CONFIG_PACKAGE_base-config-setting is not set
+
+#
+# Macvlan
+#
+# CONFIG_PACKAGE_luci-app-macvlan is not set
+
+#
+# Mentohust
+#
+CONFIG_PACKAGE_kmod-rproxy=m
+# CONFIG_PACKAGE_luci-app-mentohust is not set
+# CONFIG_PACKAGE_mentohust is not set
+# CONFIG_PACKAGE_mentohust-proxy is not set
+
+#
+# Natcap Support
+#
+# CONFIG_PACKAGE_kmod-natcap is not set
+# CONFIG_PACKAGE_luci-app-natcap is not set
+# CONFIG_PACKAGE_natcapd is not set
+# CONFIG_PACKAGE_natcapd-client is not set
+# CONFIG_PACKAGE_natcapd-mini is not set
+# CONFIG_PACKAGE_natcapd-server is not set
+# CONFIG_PACKAGE_userauth is not set
+
+#
+# Puppies
+#
+CONFIG_PACKAGE_quectel-CM=y
+
+#
 # Sound
 #
 # CONFIG_PACKAGE_alsa-utils is not set
@@ -5443,6 +5534,7 @@ CONFIG_PACKAGE_blkid=y
 # CONFIG_PACKAGE_cfdisk is not set
 CONFIG_PACKAGE_fdisk=y
 # CONFIG_PACKAGE_findfs is not set
+# CONFIG_PACKAGE_gptfdisk is not set
 # CONFIG_PACKAGE_hd-idle is not set
 # CONFIG_PACKAGE_hdparm is not set
 # CONFIG_PACKAGE_lsblk is not set
