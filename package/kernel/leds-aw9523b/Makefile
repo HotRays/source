@@ -21,7 +21,7 @@ define KernelPackage/leds-aw9523b
   TITLE:= AWININC aw9523b LED support
   DEPENDS:= +kmod-i2c-core
   FILES:=$(PKG_BUILD_DIR)/aw9523b.ko
-  AUTOLOAD:=$(call AutoLoad,41,aw9523b,1)
+  AUTOLOAD:=$(call AutoLoad,41,aw9523b)
   KCONFIG:=
 endef
 

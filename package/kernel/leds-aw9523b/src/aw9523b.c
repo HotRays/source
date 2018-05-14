@@ -285,7 +285,8 @@ int work_thread_fn(void *u)
 		spin_lock_bh(&pdata->q_lock);
 		if(list_empty(&pdata->queue)) {
 			spin_unlock_bh(&pdata->q_lock);
-			schedule();
+			// schedule();
+			msleep(1);
 			continue;
 		}
 
