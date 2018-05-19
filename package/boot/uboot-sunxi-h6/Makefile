@@ -34,7 +34,7 @@ define U-Boot/tempe_h6v2
   NAME:=TEMPE H6 V2
   BUILD_DEVICES:=sun50i-h6-tempe-h6v2
   DEPENDS:=+PACKAGE_u-boot-tempe_h6v2:arm-trusted-firmware-sunxi-h6
-  UENV:=h64
+  UENV:=h64-h6v2
 endef
 
 define U-Boot/tempe_lite2
