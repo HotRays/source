@@ -73,9 +73,9 @@ define KernelPackage/dwmac-sun8i
   TITLE:=SUN50I H6 EMAC Ethernet support
   DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy +kmod-mdio
   KCONFIG:=CONFIG_DWMAC_SUN8I=m \
+  CONFIG_STMMAC_PLATFORM=m \
+  CONFIG_STMMAC_ETH=m \
   CONFIG_MDIO_BUS_MUX \
-  CONFIG_STMMAC_ETH \
-  CONFIG_STMMAC_PLATFORM \
   CONFIG_DWMAC_DWC_QOS_ETH=n \
   CONFIG_DWMAC_GENERIC=n \
   CONFIG_DWMAC_SUNXI=n \
@@ -114,3 +114,17 @@ define KernelPackage/GobiNet
 endef
 
 $(eval $(call KernelPackage,GobiNet))
+
+#brcmfmac -> ap6356s
+define KernelPackage/brcmfmac-buildin
+  SUBMENU:=Wireless Drivers
+  TITLE:=not backport wireless devices (for brcm wifi soc in kernel) support
+  DEPENDS:=@TARGET_sunxi:TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-a55
+  KCONFIG:=CONFIG_BRCMFMAC=m \
+  CONFIG_BRCMUTIL=m
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko \
+  $(LINUX_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko
+  AUTOLOAD:=$(call AutoProbe,brcmfmac)
+endef
+
+$(eval $(call KernelPackage,brcmfmac-buildin))
