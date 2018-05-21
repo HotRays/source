@@ -367,6 +367,7 @@ CONFIG_FEED_luci=y
 CONFIG_FEED_routing=y
 CONFIG_FEED_telephony=y
 CONFIG_FEED_ptpt52=y
+# CONFIG_FEED_tempe is not set
 
 #
 # Base system
@@ -1887,8 +1888,8 @@ CONFIG_BUSYBOX_CONFIG_HWCLOCK=y
 # CONFIG_BUSYBOX_CONFIG_IPCRM is not set
 # CONFIG_BUSYBOX_CONFIG_IPCS is not set
 # CONFIG_BUSYBOX_CONFIG_LOSETUP is not set
-# CONFIG_BUSYBOX_CONFIG_LSPCI is not set
-# CONFIG_BUSYBOX_CONFIG_LSUSB is not set
+CONFIG_BUSYBOX_CONFIG_LSPCI=y
+CONFIG_BUSYBOX_CONFIG_LSUSB=y
 # CONFIG_BUSYBOX_CONFIG_MDEV is not set
 # CONFIG_BUSYBOX_CONFIG_MESG is not set
 # CONFIG_BUSYBOX_CONFIG_MKE2FS is not set
@@ -1899,7 +1900,7 @@ CONFIG_BUSYBOX_CONFIG_HWCLOCK=y
 # CONFIG_BUSYBOX_CONFIG_MKFS_VFAT is not set
 CONFIG_BUSYBOX_CONFIG_MKSWAP=y
 # CONFIG_BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID is not set
-# CONFIG_BUSYBOX_CONFIG_MORE is not set
+CONFIG_BUSYBOX_CONFIG_MORE=y
 CONFIG_BUSYBOX_CONFIG_MOUNT=y
 # CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_FAKE is not set
 # CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_VERBOSE is not set
@@ -2609,8 +2610,18 @@ CONFIG_PACKAGE_kmod-fuse=y
 #
 # I2C support
 #
-# CONFIG_PACKAGE_kmod-i2c-core is not set
+CONFIG_PACKAGE_kmod-i2c-core=m
+CONFIG_PACKAGE_kmod-i2c-algo-bit=m
+CONFIG_PACKAGE_kmod-i2c-algo-pca=m
+CONFIG_PACKAGE_kmod-i2c-algo-pcf=m
+CONFIG_PACKAGE_kmod-i2c-gpio=m
 # CONFIG_PACKAGE_kmod-i2c-gpio-custom is not set
+CONFIG_PACKAGE_kmod-i2c-mux=m
+CONFIG_PACKAGE_kmod-i2c-mux-gpio=m
+CONFIG_PACKAGE_kmod-i2c-mux-pca9541=m
+CONFIG_PACKAGE_kmod-i2c-mux-pca954x=m
+CONFIG_PACKAGE_kmod-i2c-smbus=m
+CONFIG_PACKAGE_kmod-i2c-tiny-usb=m
 
 #
 # Industrial I/O Modules
@@ -2640,14 +2651,15 @@ CONFIG_PACKAGE_kmod-fuse=y
 #
 # LED modules
 #
+# CONFIG_PACKAGE_kmod-leds-aw9523b is not set
 CONFIG_PACKAGE_kmod-leds-gpio=y
 # CONFIG_PACKAGE_kmod-leds-pca963x is not set
-# CONFIG_PACKAGE_kmod-ledtrig-default-on is not set
-# CONFIG_PACKAGE_kmod-ledtrig-gpio is not set
-# CONFIG_PACKAGE_kmod-ledtrig-heartbeat is not set
-# CONFIG_PACKAGE_kmod-ledtrig-netdev is not set
+CONFIG_PACKAGE_kmod-ledtrig-default-on=y
+CONFIG_PACKAGE_kmod-ledtrig-gpio=y
+CONFIG_PACKAGE_kmod-ledtrig-heartbeat=y
+CONFIG_PACKAGE_kmod-ledtrig-netdev=y
 # CONFIG_PACKAGE_kmod-ledtrig-oneshot is not set
-# CONFIG_PACKAGE_kmod-ledtrig-timer is not set
+CONFIG_PACKAGE_kmod-ledtrig-timer=y
 # CONFIG_PACKAGE_kmod-ledtrig-transient is not set
 
 #
@@ -2777,6 +2789,7 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 # Network Devices
 #
 # CONFIG_PACKAGE_kmod-dummy is not set
+CONFIG_PACKAGE_kmod-dwmac-sun8i=y
 # CONFIG_PACKAGE_kmod-ethoc is not set
 # CONFIG_PACKAGE_kmod-gigaset is not set
 # CONFIG_PACKAGE_kmod-hfcmulti is not set
@@ -2784,7 +2797,7 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 CONFIG_PACKAGE_kmod-ifb=y
 CONFIG_PACKAGE_kmod-libphy=y
 CONFIG_PACKAGE_kmod-macvlan=y
-# CONFIG_PACKAGE_kmod-mii is not set
+CONFIG_PACKAGE_kmod-mii=y
 CONFIG_PACKAGE_kmod-of-mdio=y
 # CONFIG_PACKAGE_kmod-phy-broadcom is not set
 # CONFIG_PACKAGE_kmod-siit is not set
@@ -2824,6 +2837,7 @@ CONFIG_PACKAGE_kmod-l2tp=y
 # CONFIG_PACKAGE_kmod-l2tp-eth is not set
 # CONFIG_PACKAGE_kmod-l2tp-ip is not set
 # CONFIG_PACKAGE_kmod-macsec is not set
+CONFIG_PACKAGE_kmod-mdio=y
 # CONFIG_PACKAGE_kmod-misdn is not set
 # CONFIG_PACKAGE_kmod-mpls is not set
 CONFIG_PACKAGE_kmod-ppp=y
@@ -2944,8 +2958,8 @@ CONFIG_PACKAGE_kmod-mmc=y
 # CONFIG_PACKAGE_kmod-usb-atm is not set
 # CONFIG_PACKAGE_kmod-usb-cm109 is not set
 CONFIG_PACKAGE_kmod-usb-core=y
-# CONFIG_PACKAGE_kmod-usb-dwc2 is not set
-# CONFIG_PACKAGE_kmod-usb-dwc3 is not set
+CONFIG_PACKAGE_kmod-usb-dwc2=y
+CONFIG_PACKAGE_kmod-usb-dwc3=y
 CONFIG_PACKAGE_kmod-usb-ehci=y
 CONFIG_PACKAGE_kmod-usb-gadget=y
 # CONFIG_PACKAGE_kmod-usb-gadget-ehci-debug is not set
@@ -2955,7 +2969,30 @@ CONFIG_PACKAGE_kmod-usb-gadget-eth=y
 # CONFIG_PACKAGE_kmod-usb-hid is not set
 # CONFIG_PACKAGE_kmod-usb-ledtrig-usbport is not set
 CONFIG_PACKAGE_kmod-usb-lib-composite=y
-# CONFIG_PACKAGE_kmod-usb-net is not set
+CONFIG_PACKAGE_kmod-usb-net=y
+CONFIG_PACKAGE_kmod-usb-net-asix=y
+CONFIG_PACKAGE_kmod-usb-net-asix-ax88179=y
+# CONFIG_PACKAGE_kmod-usb-net-cdc-eem is not set
+CONFIG_PACKAGE_kmod-usb-net-cdc-ether=y
+# CONFIG_PACKAGE_kmod-usb-net-cdc-mbim is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-ncm is not set
+# CONFIG_PACKAGE_kmod-usb-net-cdc-subset is not set
+# CONFIG_PACKAGE_kmod-usb-net-dm9601-ether is not set
+# CONFIG_PACKAGE_kmod-usb-net-hso is not set
+# CONFIG_PACKAGE_kmod-usb-net-huawei-cdc-ncm is not set
+# CONFIG_PACKAGE_kmod-usb-net-ipheth is not set
+# CONFIG_PACKAGE_kmod-usb-net-kalmia is not set
+# CONFIG_PACKAGE_kmod-usb-net-kaweth is not set
+# CONFIG_PACKAGE_kmod-usb-net-mcs7830 is not set
+# CONFIG_PACKAGE_kmod-usb-net-pegasus is not set
+# CONFIG_PACKAGE_kmod-usb-net-pl is not set
+# CONFIG_PACKAGE_kmod-usb-net-qmi-wwan is not set
+# CONFIG_PACKAGE_kmod-usb-net-rndis is not set
+# CONFIG_PACKAGE_kmod-usb-net-rtl8150 is not set
+CONFIG_PACKAGE_kmod-usb-net-rtl8152=y
+# CONFIG_PACKAGE_kmod-usb-net-sierrawireless is not set
+# CONFIG_PACKAGE_kmod-usb-net-smsc95xx is not set
+# CONFIG_PACKAGE_kmod-usb-net-sr9700 is not set
 CONFIG_PACKAGE_kmod-usb-ohci=y
 # CONFIG_PACKAGE_kmod-usb-printer is not set
 # CONFIG_PACKAGE_kmod-usb-serial is not set
@@ -5396,6 +5433,11 @@ CONFIG_PACKAGE_wpad=y
 # CONFIG_PACKAGE_userauth is not set
 
 #
+# Puppies
+#
+# CONFIG_PACKAGE_quectel-CM is not set
+
+#
 # Sound
 #
 # CONFIG_PACKAGE_alsa-utils is not set
@@ -5703,8 +5745,8 @@ CONFIG_PACKAGE_file=y
 # CONFIG_PACKAGE_haserl is not set
 # CONFIG_PACKAGE_haveged is not set
 # CONFIG_PACKAGE_hub-ctrl is not set
-# CONFIG_PACKAGE_hwclock is not set
-# CONFIG_PACKAGE_i2c-tools is not set
+CONFIG_PACKAGE_hwclock=y
+CONFIG_PACKAGE_i2c-tools=y
 # CONFIG_PACKAGE_iconv is not set
 # CONFIG_PACKAGE_iio-utils is not set
 # CONFIG_PACKAGE_inotifywait is not set
