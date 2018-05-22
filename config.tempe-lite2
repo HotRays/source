@@ -368,6 +368,7 @@ CONFIG_FEED_luci=y
 CONFIG_FEED_routing=y
 CONFIG_FEED_telephony=y
 CONFIG_FEED_ptpt52=y
+CONFIG_FEED_tempe=y
 
 #
 # Base system
@@ -2641,6 +2642,7 @@ CONFIG_PACKAGE_kmod-fuse=y
 #
 # LED modules
 #
+# CONFIG_PACKAGE_kmod-leds-aw9523b is not set
 CONFIG_PACKAGE_kmod-leds-gpio=y
 # CONFIG_PACKAGE_kmod-leds-pca963x is not set
 # CONFIG_PACKAGE_kmod-ledtrig-default-on is not set
@@ -2778,6 +2780,7 @@ CONFIG_PACKAGE_kmod-nfnetlink=y
 # Network Devices
 #
 # CONFIG_PACKAGE_kmod-dummy is not set
+# CONFIG_PACKAGE_kmod-dwmac-sun8i is not set
 # CONFIG_PACKAGE_kmod-ethoc is not set
 # CONFIG_PACKAGE_kmod-gigaset is not set
 # CONFIG_PACKAGE_kmod-hfcmulti is not set
@@ -2946,7 +2949,8 @@ CONFIG_PACKAGE_kmod-mmc=y
 # CONFIG_PACKAGE_kmod-usb-cm109 is not set
 CONFIG_PACKAGE_kmod-usb-core=y
 # CONFIG_PACKAGE_kmod-usb-dwc2 is not set
-# CONFIG_PACKAGE_kmod-usb-dwc3 is not set
+CONFIG_PACKAGE_kmod-usb-dwc3=y
+CONFIG_PACKAGE_kmod-usb-dwc3-of-simple=y
 CONFIG_PACKAGE_kmod-usb-ehci=y
 CONFIG_PACKAGE_kmod-usb-gadget=y
 # CONFIG_PACKAGE_kmod-usb-gadget-ehci-debug is not set
@@ -5373,6 +5377,11 @@ CONFIG_PACKAGE_wpad=y
 # CONFIG_PACKAGE_base-config-setting is not set
 
 #
+# Fast Forward Stacks
+#
+# CONFIG_PACKAGE_kmod-natflow is not set
+
+#
 # Macvlan
 #
 # CONFIG_PACKAGE_luci-app-macvlan is not set
@@ -5395,6 +5404,11 @@ CONFIG_PACKAGE_wpad=y
 # CONFIG_PACKAGE_natcapd-mini is not set
 # CONFIG_PACKAGE_natcapd-server is not set
 # CONFIG_PACKAGE_userauth is not set
+
+#
+# Puppies
+#
+# CONFIG_PACKAGE_quectel-CM is not set
 
 #
 # Sound

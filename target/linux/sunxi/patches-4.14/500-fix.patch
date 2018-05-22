@@ -1,0 +1,1129 @@
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index c3f3f1a8..c5460b46 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * core.c - DesignWare USB3 DRD Controller Core file
+  *
+@@ -5,18 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
+ #include <linux/version.h>
+@@ -111,6 +100,8 @@ static void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode)
+ 	reg &= ~(DWC3_GCTL_PRTCAPDIR(DWC3_GCTL_PRTCAP_OTG));
+ 	reg |= DWC3_GCTL_PRTCAPDIR(mode);
+ 	dwc3_writel(dwc->regs, DWC3_GCTL, reg);
++
++	dwc->current_dr_role = mode;
+ }
+ 
+ static void __dwc3_set_mode(struct work_struct *work)
+@@ -147,8 +138,6 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 
+ 	dwc3_set_prtcap(dwc, dwc->desired_dr_role);
+ 
+-	dwc->current_dr_role = dwc->desired_dr_role;
+-
+ 	spin_unlock_irqrestore(&dwc->lock, flags);
+ 
+ 	switch (dwc->desired_dr_role) {
+@@ -159,9 +148,8 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 		} else {
+ 			if (dwc->usb2_phy)
+ 				otg_set_vbus(dwc->usb2_phy->otg, true);
+-			if (dwc->usb2_generic_phy)
+-				phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
+-
++			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
++			phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_HOST);
+ 		}
+ 		break;
+ 	case DWC3_GCTL_PRTCAP_DEVICE:
+@@ -169,8 +157,8 @@ static void __dwc3_set_mode(struct work_struct *work)
+ 
+ 		if (dwc->usb2_phy)
+ 			otg_set_vbus(dwc->usb2_phy->otg, false);
+-		if (dwc->usb2_generic_phy)
+-			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
++		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
++		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_DEVICE);
+ 
+ 		ret = dwc3_gadget_init(dwc);
+ 		if (ret)
+@@ -233,7 +221,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
+ 	 * XHCI driver will reset the host block. If dwc3 was configured for
+ 	 * host-only mode, then we can return early.
+ 	 */
+-	if (dwc->dr_mode == USB_DR_MODE_HOST)
++	if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST)
+ 		return 0;
+ 
+ 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
+@@ -934,8 +922,8 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
+ 
+ 		if (dwc->usb2_phy)
+ 			otg_set_vbus(dwc->usb2_phy->otg, false);
+-		if (dwc->usb2_generic_phy)
+-			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
++		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_DEVICE);
++		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_DEVICE);
+ 
+ 		ret = dwc3_gadget_init(dwc);
+ 		if (ret) {
+@@ -949,8 +937,8 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
+ 
+ 		if (dwc->usb2_phy)
+ 			otg_set_vbus(dwc->usb2_phy->otg, true);
+-		if (dwc->usb2_generic_phy)
+-			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
++		phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
++		phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_HOST);
+ 
+ 		ret = dwc3_host_init(dwc);
+ 		if (ret) {
+@@ -1292,45 +1280,53 @@ static int dwc3_remove(struct platform_device *pdev)
+ }
+ 
+ #ifdef CONFIG_PM
+-static int dwc3_suspend_common(struct dwc3 *dwc)
++static int dwc3_suspend_common(struct dwc3 *dwc, pm_message_t msg)
+ {
+ 	unsigned long	flags;
+ 
+-	switch (dwc->dr_mode) {
+-	case USB_DR_MODE_PERIPHERAL:
+-	case USB_DR_MODE_OTG:
++	switch (dwc->current_dr_role) {
++	case DWC3_GCTL_PRTCAP_DEVICE:
+ 		spin_lock_irqsave(&dwc->lock, flags);
+ 		dwc3_gadget_suspend(dwc);
+ 		spin_unlock_irqrestore(&dwc->lock, flags);
++		dwc3_core_exit(dwc);
++		break;
++	case DWC3_GCTL_PRTCAP_HOST:
++		/* do nothing during host runtime_suspend */
++		if (!PMSG_IS_AUTO(msg))
++			dwc3_core_exit(dwc);
+ 		break;
+-	case USB_DR_MODE_HOST:
+ 	default:
+ 		/* do nothing */
+ 		break;
+ 	}
+ 
+-	dwc3_core_exit(dwc);
+-
+ 	return 0;
+ }
+ 
+-static int dwc3_resume_common(struct dwc3 *dwc)
++static int dwc3_resume_common(struct dwc3 *dwc, pm_message_t msg)
+ {
+ 	unsigned long	flags;
+ 	int		ret;
+ 
+-	ret = dwc3_core_init(dwc);
+-	if (ret)
+-		return ret;
++	switch (dwc->current_dr_role) {
++	case DWC3_GCTL_PRTCAP_DEVICE:
++		ret = dwc3_core_init(dwc);
++		if (ret)
++			return ret;
+ 
+-	switch (dwc->dr_mode) {
+-	case USB_DR_MODE_PERIPHERAL:
+-	case USB_DR_MODE_OTG:
+ 		spin_lock_irqsave(&dwc->lock, flags);
+ 		dwc3_gadget_resume(dwc);
+ 		spin_unlock_irqrestore(&dwc->lock, flags);
+-		/* FALLTHROUGH */
+-	case USB_DR_MODE_HOST:
++		break;
++	case DWC3_GCTL_PRTCAP_HOST:
++		/* nothing to do on host runtime_resume */
++		if (!PMSG_IS_AUTO(msg)) {
++			ret = dwc3_core_init(dwc);
++			if (ret)
++				return ret;
++		}
++		break;
+ 	default:
+ 		/* do nothing */
+ 		break;
+@@ -1341,13 +1337,12 @@ static int dwc3_resume_common(struct dwc3 *dwc)
+ 
+ static int dwc3_runtime_checks(struct dwc3 *dwc)
+ {
+-	switch (dwc->dr_mode) {
+-	case USB_DR_MODE_PERIPHERAL:
+-	case USB_DR_MODE_OTG:
++	switch (dwc->current_dr_role) {
++	case DWC3_GCTL_PRTCAP_DEVICE:
+ 		if (dwc->connected)
+ 			return -EBUSY;
+ 		break;
+-	case USB_DR_MODE_HOST:
++	case DWC3_GCTL_PRTCAP_HOST:
+ 	default:
+ 		/* do nothing */
+ 		break;
+@@ -1364,7 +1359,7 @@ static int dwc3_runtime_suspend(struct device *dev)
+ 	if (dwc3_runtime_checks(dwc))
+ 		return -EBUSY;
+ 
+-	ret = dwc3_suspend_common(dwc);
++	ret = dwc3_suspend_common(dwc, PMSG_AUTO_SUSPEND);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1380,23 +1375,21 @@ static int dwc3_runtime_resume(struct device *dev)
+ 
+ 	device_init_wakeup(dev, false);
+ 
+-	ret = dwc3_resume_common(dwc);
++	ret = dwc3_resume_common(dwc, PMSG_AUTO_RESUME);
+ 	if (ret)
+ 		return ret;
+ 
+-	switch (dwc->dr_mode) {
+-	case USB_DR_MODE_PERIPHERAL:
+-	case USB_DR_MODE_OTG:
++	switch (dwc->current_dr_role) {
++	case DWC3_GCTL_PRTCAP_DEVICE:
+ 		dwc3_gadget_process_pending_events(dwc);
+ 		break;
+-	case USB_DR_MODE_HOST:
++	case DWC3_GCTL_PRTCAP_HOST:
+ 	default:
+ 		/* do nothing */
+ 		break;
+ 	}
+ 
+ 	pm_runtime_mark_last_busy(dev);
+-	pm_runtime_put(dev);
+ 
+ 	return 0;
+ }
+@@ -1405,13 +1398,12 @@ static int dwc3_runtime_idle(struct device *dev)
+ {
+ 	struct dwc3     *dwc = dev_get_drvdata(dev);
+ 
+-	switch (dwc->dr_mode) {
+-	case USB_DR_MODE_PERIPHERAL:
+-	case USB_DR_MODE_OTG:
++	switch (dwc->current_dr_role) {
++	case DWC3_GCTL_PRTCAP_DEVICE:
+ 		if (dwc3_runtime_checks(dwc))
+ 			return -EBUSY;
+ 		break;
+-	case USB_DR_MODE_HOST:
++	case DWC3_GCTL_PRTCAP_HOST:
+ 	default:
+ 		/* do nothing */
+ 		break;
+@@ -1430,7 +1422,7 @@ static int dwc3_suspend(struct device *dev)
+ 	struct dwc3	*dwc = dev_get_drvdata(dev);
+ 	int		ret;
+ 
+-	ret = dwc3_suspend_common(dwc);
++	ret = dwc3_suspend_common(dwc, PMSG_SUSPEND);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1446,7 +1438,7 @@ static int dwc3_resume(struct device *dev)
+ 
+ 	pinctrl_pm_select_default_state(dev);
+ 
+-	ret = dwc3_resume_common(dwc);
++	ret = dwc3_resume_common(dwc, PMSG_RESUME);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index fc288192..6d4e7a66 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * core.h - DesignWare USB3 DRD Core Header
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #ifndef __DRIVERS_USB_DWC3_CORE_H
+@@ -531,6 +523,7 @@ struct dwc3_event_buffer {
+  * @number: endpoint number (1 - 15)
+  * @type: set to bmAttributes & USB_ENDPOINT_XFERTYPE_MASK
+  * @resource_index: Resource transfer index
++ * @frame_number: set to the frame number we want this transfer to start (ISOC)
+  * @interval: the interval on which the ISOC transfer is started
+  * @allocated_requests: number of requests allocated
+  * @queued_requests: number of requests queued for transfer
+@@ -583,6 +576,7 @@ struct dwc3_ep {
+ 	u8			resource_index;
+ 	u32			allocated_requests;
+ 	u32			queued_requests;
++	u32			frame_number;
+ 	u32			interval;
+ 
+ 	char			name[20];
+diff --git a/drivers/usb/dwc3/debug.h b/drivers/usb/dwc3/debug.h
+index 5e9c070e..368f8e59 100644
+--- a/drivers/usb/dwc3/debug.h
++++ b/drivers/usb/dwc3/debug.h
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * debug.h - DesignWare USB3 DRD Controller Debug Header
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #ifndef __DWC3_DEBUG_H
+diff --git a/drivers/usb/dwc3/debugfs.c b/drivers/usb/dwc3/debugfs.c
+index 4e09be80..00e65530 100644
+--- a/drivers/usb/dwc3/debugfs.c
++++ b/drivers/usb/dwc3/debugfs.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * debugfs.c - DesignWare USB3 DRD Controller DebugFS file
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/kernel.h>
+diff --git a/drivers/usb/dwc3/drd.c b/drivers/usb/dwc3/drd.c
+index 2765c51c..cc8ab9a8 100644
+--- a/drivers/usb/dwc3/drd.c
++++ b/drivers/usb/dwc3/drd.c
+@@ -1,21 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * drd.c - DesignWare USB3 DRD Controller Dual-role support
+  *
+  * Copyright (C) 2017 Texas Instruments Incorporated - http://www.ti.com
+  *
+  * Authors: Roger Quadros <rogerq@ti.com>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
+ #include <linux/extcon.h>
+diff --git a/drivers/usb/dwc3/dwc3-exynos.c b/drivers/usb/dwc3/dwc3-exynos.c
+index e089df72..a94fb1ba 100644
+--- a/drivers/usb/dwc3/dwc3-exynos.c
++++ b/drivers/usb/dwc3/dwc3-exynos.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * dwc3-exynos.c - Samsung EXYNOS DWC3 Specific Glue layer
+  *
+@@ -5,15 +6,6 @@
+  *		http://www.samsung.com
+  *
+  * Author: Anton Tikhomirov <av.tikhomirov@samsung.com>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/module.h>
+diff --git a/drivers/usb/dwc3/dwc3-keystone.c b/drivers/usb/dwc3/dwc3-keystone.c
+index d2ed9523..193a9a88 100644
+--- a/drivers/usb/dwc3/dwc3-keystone.c
++++ b/drivers/usb/dwc3/dwc3-keystone.c
+@@ -1,18 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * dwc3-keystone.c - Keystone Specific Glue layer
+  *
+  * Copyright (C) 2010-2013 Texas Instruments Incorporated - http://www.ti.com
+  *
+  * Author: WingMan Kwok <w-kwok2@ti.com>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/module.h>
+diff --git a/drivers/usb/dwc3/dwc3-of-simple.c b/drivers/usb/dwc3/dwc3-of-simple.c
+index 8da357c5..532aa42e 100644
+--- a/drivers/usb/dwc3/dwc3-of-simple.c
++++ b/drivers/usb/dwc3/dwc3-of-simple.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * dwc3-of-simple.c - OF glue layer for simple integrations
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Author: Felipe Balbi <balbi@ti.com>
+  *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+  * This is a combination of the old dwc3-qcom.c by Ivan T. Ivanov
+  * <iivanov@mm-sol.com> and the original patch adding support for Xilinx' SoC
+  * by Subbaraya Sundeep Bhatta <subbaraya.sundeep.bhatta@xilinx.com>
+@@ -28,11 +20,13 @@
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/pm_runtime.h>
++#include <linux/reset.h>
+ 
+ struct dwc3_of_simple {
+ 	struct device		*dev;
+ 	struct clk		**clks;
+ 	int			num_clocks;
++	struct reset_control	*resets;
+ };
+ 
+ static int dwc3_of_simple_clk_init(struct dwc3_of_simple *simple, int count)
+@@ -97,10 +91,21 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, simple);
+ 	simple->dev = dev;
+ 
++	simple->resets = of_reset_control_array_get_optional_exclusive(np);
++	if (IS_ERR(simple->resets)) {
++		ret = PTR_ERR(simple->resets);
++		dev_err(dev, "failed to get device resets, err=%d\n", ret);
++		return ret;
++	}
++
++	ret = reset_control_deassert(simple->resets);
++	if (ret)
++		goto err_resetc_put;
++
+ 	ret = dwc3_of_simple_clk_init(simple, of_count_phandle_with_args(np,
+ 						"clocks", "#clock-cells"));
+ 	if (ret)
+-		return ret;
++		goto err_resetc_assert;
+ 
+ 	ret = of_platform_populate(np, NULL, NULL, dev);
+ 	if (ret) {
+@@ -109,7 +114,7 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+ 			clk_put(simple->clks[i]);
+ 		}
+ 
+-		return ret;
++		goto err_resetc_assert;
+ 	}
+ 
+ 	pm_runtime_set_active(dev);
+@@ -117,6 +122,13 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+ 	pm_runtime_get_sync(dev);
+ 
+ 	return 0;
++
++err_resetc_assert:
++	reset_control_assert(simple->resets);
++
++err_resetc_put:
++	reset_control_put(simple->resets);
++	return ret;
+ }
+ 
+ static int dwc3_of_simple_remove(struct platform_device *pdev)
+@@ -125,12 +137,16 @@ static int dwc3_of_simple_remove(struct platform_device *pdev)
+ 	struct device		*dev = &pdev->dev;
+ 	int			i;
+ 
++	of_platform_depopulate(dev);
++
+ 	for (i = 0; i < simple->num_clocks; i++) {
+ 		clk_disable_unprepare(simple->clks[i]);
+ 		clk_put(simple->clks[i]);
+ 	}
++	simple->num_clocks = 0;
+ 
+-	of_platform_depopulate(dev);
++	reset_control_assert(simple->resets);
++	reset_control_put(simple->resets);
+ 
+ 	pm_runtime_put_sync(dev);
+ 	pm_runtime_disable(dev);
+@@ -191,6 +207,7 @@ static struct platform_driver dwc3_of_simple_driver = {
+ 	.driver		= {
+ 		.name	= "dwc3-of-simple",
+ 		.of_match_table = of_dwc3_simple_match,
++		.pm	= &dwc3_of_simple_dev_pm_ops,
+ 	},
+ };
+ 
+diff --git a/drivers/usb/dwc3/dwc3-omap.c b/drivers/usb/dwc3/dwc3-omap.c
+index 3530795b..a4719e85 100644
+--- a/drivers/usb/dwc3/dwc3-omap.c
++++ b/drivers/usb/dwc3/dwc3-omap.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * dwc3-omap.c - OMAP Specific Glue layer
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/module.h>
+diff --git a/drivers/usb/dwc3/dwc3-pci.c b/drivers/usb/dwc3/dwc3-pci.c
+index bc5e91d4..c961a94d 100644
+--- a/drivers/usb/dwc3/dwc3-pci.c
++++ b/drivers/usb/dwc3/dwc3-pci.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * dwc3-pci.c - PCI Specific glue layer
+  *
+@@ -5,21 +6,13 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ #include <linux/pci.h>
++#include <linux/workqueue.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio/consumer.h>
+@@ -61,6 +54,7 @@ struct dwc3_pci {
+ 	guid_t guid;
+ 
+ 	unsigned int has_dsm_for_pm:1;
++	struct work_struct wakeup_work;
+ };
+ 
+ static const struct acpi_gpio_params reset_gpios = { 0, 0, false };
+@@ -174,6 +168,22 @@ static int dwc3_pci_quirks(struct dwc3_pci *dwc)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM
++static void dwc3_pci_resume_work(struct work_struct *work)
++{
++	struct dwc3_pci *dwc = container_of(work, struct dwc3_pci, wakeup_work);
++	struct platform_device *dwc3 = dwc->dwc3;
++	int ret;
++
++	ret = pm_runtime_get_sync(&dwc3->dev);
++	if (ret)
++		return;
++
++	pm_runtime_mark_last_busy(&dwc3->dev);
++	pm_runtime_put_sync_autosuspend(&dwc3->dev);
++}
++#endif
++
+ static int dwc3_pci_probe(struct pci_dev *pci,
+ 		const struct pci_device_id *id)
+ {
+@@ -232,6 +242,9 @@ static int dwc3_pci_probe(struct pci_dev *pci,
+ 	device_init_wakeup(dev, true);
+ 	pci_set_drvdata(pci, dwc);
+ 	pm_runtime_put(dev);
++#ifdef CONFIG_PM
++	INIT_WORK(&dwc->wakeup_work, dwc3_pci_resume_work);
++#endif
+ 
+ 	return 0;
+ err:
+@@ -243,6 +256,9 @@ static void dwc3_pci_remove(struct pci_dev *pci)
+ {
+ 	struct dwc3_pci		*dwc = pci_get_drvdata(pci);
+ 
++#ifdef CONFIG_PM
++	cancel_work_sync(&dwc->wakeup_work);
++#endif
+ 	device_init_wakeup(&pci->dev, false);
+ 	pm_runtime_get(&pci->dev);
+ 	platform_device_unregister(dwc->dwc3);
+@@ -318,14 +334,15 @@ static int dwc3_pci_runtime_suspend(struct device *dev)
+ static int dwc3_pci_runtime_resume(struct device *dev)
+ {
+ 	struct dwc3_pci		*dwc = dev_get_drvdata(dev);
+-	struct platform_device	*dwc3 = dwc->dwc3;
+ 	int			ret;
+ 
+ 	ret = dwc3_pci_dsm(dwc, PCI_INTEL_BXT_STATE_D0);
+ 	if (ret)
+ 		return ret;
+ 
+-	return pm_runtime_get(&dwc3->dev);
++	queue_work(pm_wq, &dwc->wakeup_work);
++
++	return 0;
+ }
+ #endif /* CONFIG_PM */
+ 
+diff --git a/drivers/usb/dwc3/dwc3-st.c b/drivers/usb/dwc3/dwc3-st.c
+index 505676fd..16081383 100644
+--- a/drivers/usb/dwc3/dwc3-st.c
++++ b/drivers/usb/dwc3/dwc3-st.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0+
+ /**
+  * dwc3-st.c Support for dwc3 platform devices on ST Microelectronics platforms
+  *
+@@ -10,11 +11,6 @@
+  * Contributors: Aymen Bouattay <aymen.bouattay@st.com>
+  *               Peter Griffin <peter.griffin@linaro.org>
+  *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+  * Inspired by dwc3-omap.c and dwc3-exynos.c.
+  */
+ 
+diff --git a/drivers/usb/dwc3/ep0.c b/drivers/usb/dwc3/ep0.c
+index 89fe53c8..618b4260 100644
+--- a/drivers/usb/dwc3/ep0.c
++++ b/drivers/usb/dwc3/ep0.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * ep0.c - DesignWare USB3 DRD Controller Endpoint 0 Handling
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/kernel.h>
+@@ -487,14 +479,10 @@ static int dwc3_ep0_handle_device(struct dwc3 *dwc,
+ static int dwc3_ep0_handle_intf(struct dwc3 *dwc,
+ 		struct usb_ctrlrequest *ctrl, int set)
+ {
+-	enum usb_device_state	state;
+ 	u32			wValue;
+-	u32			wIndex;
+ 	int			ret = 0;
+ 
+ 	wValue = le16_to_cpu(ctrl->wValue);
+-	wIndex = le16_to_cpu(ctrl->wIndex);
+-	state = dwc->gadget.state;
+ 
+ 	switch (wValue) {
+ 	case USB_INTRF_FUNC_SUSPEND:
+@@ -517,14 +505,10 @@ static int dwc3_ep0_handle_endpoint(struct dwc3 *dwc,
+ 		struct usb_ctrlrequest *ctrl, int set)
+ {
+ 	struct dwc3_ep		*dep;
+-	enum usb_device_state	state;
+ 	u32			wValue;
+-	u32			wIndex;
+ 	int			ret;
+ 
+ 	wValue = le16_to_cpu(ctrl->wValue);
+-	wIndex = le16_to_cpu(ctrl->wIndex);
+-	state = dwc->gadget.state;
+ 
+ 	switch (wValue) {
+ 	case USB_ENDPOINT_HALT:
+@@ -551,10 +535,8 @@ static int dwc3_ep0_handle_feature(struct dwc3 *dwc,
+ {
+ 	u32			recip;
+ 	int			ret;
+-	enum usb_device_state	state;
+ 
+ 	recip = ctrl->bRequestType & USB_RECIP_MASK;
+-	state = dwc->gadget.state;
+ 
+ 	switch (recip) {
+ 	case USB_RECIP_DEVICE:
+@@ -712,12 +694,10 @@ static int dwc3_ep0_set_sel(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
+ 	struct dwc3_ep	*dep;
+ 	enum usb_device_state state = dwc->gadget.state;
+ 	u16		wLength;
+-	u16		wValue;
+ 
+ 	if (state == USB_STATE_DEFAULT)
+ 		return -EINVAL;
+ 
+-	wValue = le16_to_cpu(ctrl->wValue);
+ 	wLength = le16_to_cpu(ctrl->wLength);
+ 
+ 	if (wLength != 6) {
+@@ -842,9 +822,6 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
+ 	struct usb_request	*ur;
+ 	struct dwc3_trb		*trb;
+ 	struct dwc3_ep		*ep0;
+-	unsigned		maxp;
+-	unsigned		remaining_ur_length;
+-	void			*buf;
+ 	u32			transferred = 0;
+ 	u32			status;
+ 	u32			length;
+@@ -871,11 +848,8 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
+ 	}
+ 
+ 	ur = &r->request;
+-	buf = ur->buf;
+-	remaining_ur_length = ur->length;
+ 
+ 	length = trb->size & DWC3_TRB_SIZE_MASK;
+-	maxp = ep0->endpoint.maxpacket;
+ 	transferred = ur->length - length;
+ 	ur->actual += transferred;
+ 
+@@ -1006,7 +980,6 @@ static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
+ 	} else if (IS_ALIGNED(req->request.length, dep->endpoint.maxpacket) &&
+ 		   req->request.length && req->request.zero) {
+ 		u32	maxpacket;
+-		u32	rem;
+ 
+ 		ret = usb_gadget_map_request_by_dev(dwc->sysdev,
+ 				&req->request, dep->number);
+@@ -1014,7 +987,6 @@ static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
+ 			return;
+ 
+ 		maxpacket = dep->endpoint.maxpacket;
+-		rem = req->request.length % maxpacket;
+ 
+ 		/* prepare normal TRB */
+ 		dwc3_ep0_prepare_one_trb(dep, req->request.dma,
+diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
+index fe75e969..4a1453fb 100644
+--- a/drivers/usb/dwc3/gadget.c
++++ b/drivers/usb/dwc3/gadget.c
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * gadget.c - DesignWare USB3 DRD Controller Gadget Framework Link
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/kernel.h>
+@@ -927,7 +919,7 @@ static void __dwc3_prepare_one_trb(struct dwc3_ep *dep, struct dwc3_trb *trb,
+ 			 */
+ 			if (speed == USB_SPEED_HIGH) {
+ 				struct usb_ep *ep = &dep->endpoint;
+-				unsigned int mult = ep->mult - 1;
++				unsigned int mult = 2;
+ 				unsigned int maxp = usb_endpoint_maxp(ep->desc);
+ 
+ 				if (length <= (2 * maxp))
+@@ -1158,9 +1150,6 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
+ 
+ 	BUILD_BUG_ON_NOT_POWER_OF_2(DWC3_TRB_NUM);
+ 
+-	if (!dwc3_calc_trbs_left(dep))
+-		return;
+-
+ 	/*
+ 	 * We can get in a situation where there's a request in the started list
+ 	 * but there weren't enough TRBs to fully kick it in the first time
+@@ -1201,7 +1190,7 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
+ 	}
+ }
+ 
+-static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param)
++static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep)
+ {
+ 	struct dwc3_gadget_ep_cmd_params params;
+ 	struct dwc3_request		*req;
+@@ -1209,6 +1198,9 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param)
+ 	int				ret;
+ 	u32				cmd;
+ 
++	if (!dwc3_calc_trbs_left(dep))
++		return 0;
++
+ 	starting = !(dep->flags & DWC3_EP_BUSY);
+ 
+ 	dwc3_prepare_trbs(dep);
+@@ -1223,8 +1215,10 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param)
+ 	if (starting) {
+ 		params.param0 = upper_32_bits(req->trb_dma);
+ 		params.param1 = lower_32_bits(req->trb_dma);
+-		cmd = DWC3_DEPCMD_STARTTRANSFER |
+-			DWC3_DEPCMD_PARAM(cmd_param);
++		cmd = DWC3_DEPCMD_STARTTRANSFER;
++
++		if (usb_endpoint_xfer_isoc(dep->endpoint.desc))
++			cmd |= DWC3_DEPCMD_PARAM(dep->frame_number);
+ 	} else {
+ 		cmd = DWC3_DEPCMD_UPDATETRANSFER |
+ 			DWC3_DEPCMD_PARAM(dep->resource_index);
+@@ -1265,8 +1259,6 @@ static int __dwc3_gadget_get_frame(struct dwc3 *dwc)
+ static void __dwc3_gadget_start_isoc(struct dwc3 *dwc,
+ 		struct dwc3_ep *dep, u32 cur_uf)
+ {
+-	u32 uf;
+-
+ 	if (list_empty(&dep->pending_list)) {
+ 		dev_info(dwc->dev, "%s: ran out of requests\n",
+ 				dep->name);
+@@ -1278,9 +1270,8 @@ static void __dwc3_gadget_start_isoc(struct dwc3 *dwc,
+ 	 * Schedule the first trb for one interval in the future or at
+ 	 * least 4 microframes.
+ 	 */
+-	uf = cur_uf + max_t(u32, 4, dep->interval);
+-
+-	__dwc3_gadget_kick_transfer(dep, uf);
++	dep->frame_number = cur_uf + max_t(u32, 4, dep->interval);
++	__dwc3_gadget_kick_transfer(dep);
+ }
+ 
+ static void dwc3_gadget_start_isoc(struct dwc3 *dwc,
+@@ -1297,7 +1288,6 @@ static void dwc3_gadget_start_isoc(struct dwc3 *dwc,
+ static int __dwc3_gadget_ep_queue(struct dwc3_ep *dep, struct dwc3_request *req)
+ {
+ 	struct dwc3		*dwc = dep->dwc;
+-	int			ret = 0;
+ 
+ 	if (!dep->endpoint.desc) {
+ 		dev_err(dwc->dev, "%s: can't queue to disabled endpoint\n",
+@@ -1344,24 +1334,14 @@ static int __dwc3_gadget_ep_queue(struct dwc3_ep *dep, struct dwc3_request *req)
+ 		}
+ 
+ 		if ((dep->flags & DWC3_EP_BUSY) &&
+-		    !(dep->flags & DWC3_EP_MISSED_ISOC)) {
+-			WARN_ON_ONCE(!dep->resource_index);
+-			ret = __dwc3_gadget_kick_transfer(dep,
+-							  dep->resource_index);
+-		}
+-
+-		goto out;
+-	}
++		    !(dep->flags & DWC3_EP_MISSED_ISOC))
++			goto out;
+ 
+-	if (!dwc3_calc_trbs_left(dep))
+ 		return 0;
++	}
+ 
+-	ret = __dwc3_gadget_kick_transfer(dep, 0);
+ out:
+-	if (ret == -EBUSY)
+-		ret = 0;
+-
+-	return ret;
++	return __dwc3_gadget_kick_transfer(dep);
+ }
+ 
+ static int dwc3_gadget_ep_queue(struct usb_ep *ep, struct usb_request *request,
+@@ -2354,7 +2334,7 @@ static int dwc3_cleanup_done_reqs(struct dwc3 *dwc, struct dwc3_ep *dep,
+ 		req->request.actual = length - req->remaining;
+ 
+ 		if ((req->request.actual < length) && req->num_pending_sgs)
+-			return __dwc3_gadget_kick_transfer(dep, 0);
++			return __dwc3_gadget_kick_transfer(dep);
+ 
+ 		dwc3_gadget_giveback(dep, req, status);
+ 
+@@ -2447,13 +2427,8 @@ static void dwc3_endpoint_transfer_complete(struct dwc3 *dwc,
+ 	if (!dep->endpoint.desc)
+ 		return;
+ 
+-	if (!usb_endpoint_xfer_isoc(dep->endpoint.desc)) {
+-		int ret;
+-
+-		ret = __dwc3_gadget_kick_transfer(dep, 0);
+-		if (!ret || ret == -EBUSY)
+-			return;
+-	}
++	if (!usb_endpoint_xfer_isoc(dep->endpoint.desc))
++		__dwc3_gadget_kick_transfer(dep);
+ }
+ 
+ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
+@@ -2494,15 +2469,10 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
+ 		dwc3_endpoint_transfer_complete(dwc, dep, event);
+ 		break;
+ 	case DWC3_DEPEVT_XFERNOTREADY:
+-		if (usb_endpoint_xfer_isoc(dep->endpoint.desc)) {
++		if (usb_endpoint_xfer_isoc(dep->endpoint.desc))
+ 			dwc3_gadget_start_isoc(dwc, dep, event);
+-		} else {
+-			int ret;
+-
+-			ret = __dwc3_gadget_kick_transfer(dep, 0);
+-			if (!ret || ret == -EBUSY)
+-				return;
+-		}
++		else
++			__dwc3_gadget_kick_transfer(dep);
+ 
+ 		break;
+ 	case DWC3_DEPEVT_STREAMEVT:
+@@ -2783,6 +2753,8 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
+ 
+ 	dwc->eps[1]->endpoint.maxpacket = dwc->gadget.ep0->maxpacket;
+ 
++	dwc->eps[1]->endpoint.maxpacket = dwc->gadget.ep0->maxpacket;
++
+ 	/* Enable USB2 LPM Capability */
+ 
+ 	if ((dwc->revision > DWC3_REVISION_194A) &&
+diff --git a/drivers/usb/dwc3/gadget.h b/drivers/usb/dwc3/gadget.h
+index 4a322754..578aa856 100644
+--- a/drivers/usb/dwc3/gadget.h
++++ b/drivers/usb/dwc3/gadget.h
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /*
+  * gadget.h - DesignWare USB3 DRD Gadget Header
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #ifndef __DRIVERS_USB_DWC3_GADGET_H
+diff --git a/drivers/usb/dwc3/host.c b/drivers/usb/dwc3/host.c
+index 76f0b0df..1a3878a3 100644
+--- a/drivers/usb/dwc3/host.c
++++ b/drivers/usb/dwc3/host.c
+@@ -1,18 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * host.c - DesignWare USB3 DRD Controller Host Glue
+  *
+  * Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #include <linux/platform_device.h>
+diff --git a/drivers/usb/dwc3/io.h b/drivers/usb/dwc3/io.h
+index c69b0669..70acdf94 100644
+--- a/drivers/usb/dwc3/io.h
++++ b/drivers/usb/dwc3/io.h
+@@ -1,3 +1,4 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * io.h - DesignWare USB3 DRD IO Header
+  *
+@@ -5,15 +6,6 @@
+  *
+  * Authors: Felipe Balbi <balbi@ti.com>,
+  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #ifndef __DRIVERS_USB_DWC3_IO_H
+diff --git a/drivers/usb/dwc3/trace.c b/drivers/usb/dwc3/trace.c
+index 6cd16641..f8886f3f 100644
+--- a/drivers/usb/dwc3/trace.c
++++ b/drivers/usb/dwc3/trace.c
+@@ -1,18 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * trace.c - DesignWare USB3 DRD Controller Trace Support
+  *
+  * Copyright (C) 2014 Texas Instruments Incorporated - http://www.ti.com
+  *
+  * Author: Felipe Balbi <balbi@ti.com>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #define CREATE_TRACE_POINTS
+diff --git a/drivers/usb/dwc3/trace.h b/drivers/usb/dwc3/trace.h
+index 6504b116..a9dd5c64 100644
+--- a/drivers/usb/dwc3/trace.h
++++ b/drivers/usb/dwc3/trace.h
+@@ -1,18 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * trace.h - DesignWare USB3 DRD Controller Trace Support
+  *
+  * Copyright (C) 2014 Texas Instruments Incorporated - http://www.ti.com
+  *
+  * Author: Felipe Balbi <balbi@ti.com>
+- *
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2  of
+- * the License as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+  */
+ 
+ #undef TRACE_SYSTEM
+diff --git a/drivers/usb/dwc3/ulpi.c b/drivers/usb/dwc3/ulpi.c
+index e87ce8e9..f62b5f3c 100644
+--- a/drivers/usb/dwc3/ulpi.c
++++ b/drivers/usb/dwc3/ulpi.c
+@@ -1,13 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0
+ /**
+  * ulpi.c - DesignWare USB3 Controller's ULPI PHY interface
+  *
+  * Copyright (C) 2015 Intel Corporation
+  *
+  * Author: Heikki Krogerus <heikki.krogerus@linux.intel.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+  */
+ 
+ #include <linux/ulpi/regs.h>
