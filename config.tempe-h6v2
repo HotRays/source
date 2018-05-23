@@ -2960,6 +2960,7 @@ CONFIG_PACKAGE_kmod-mmc=y
 CONFIG_PACKAGE_kmod-usb-core=y
 CONFIG_PACKAGE_kmod-usb-dwc2=y
 CONFIG_PACKAGE_kmod-usb-dwc3=y
+CONFIG_PACKAGE_kmod-usb-dwc3-of-simple=y
 CONFIG_PACKAGE_kmod-usb-ehci=y
 CONFIG_PACKAGE_kmod-usb-gadget=y
 # CONFIG_PACKAGE_kmod-usb-gadget-ehci-debug is not set
@@ -5407,11 +5408,6 @@ CONFIG_PACKAGE_wpad=y
 # Base config setting for this board
 #
 # CONFIG_PACKAGE_base-config-setting is not set
-
-#
-# Fast Forward Stacks
-#
-# CONFIG_PACKAGE_kmod-natflow is not set
 
 #
 # Macvlan
