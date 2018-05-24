@@ -1,0 +1,24 @@
+From 9dd15b22231fc6fc88ed8fd7c22a1c574f426496 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Thu, 24 May 2018 11:25:04 +0800
+Subject: [PATCH] sunxi watchdog dts match added
+
+---
+ drivers/watchdog/sunxi_wdt.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/watchdog/sunxi_wdt.c b/drivers/watchdog/sunxi_wdt.c
+index 9728fa3..b44e7c4 100644
+--- a/drivers/watchdog/sunxi_wdt.c
++++ b/drivers/watchdog/sunxi_wdt.c
+@@ -227,6 +227,7 @@ static const struct sunxi_wdt_reg sun6i_wdt_reg = {
+ static const struct of_device_id sunxi_wdt_dt_ids[] = {
+ 	{ .compatible = "allwinner,sun4i-a10-wdt", .data = &sun4i_wdt_reg },
+ 	{ .compatible = "allwinner,sun6i-a31-wdt", .data = &sun6i_wdt_reg },
++	{ .compatible = "allwinner,sun50i-h6-wdt", .data = &sun6i_wdt_reg },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, sunxi_wdt_dt_ids);
+-- 
+2.14.2
+

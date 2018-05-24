@@ -115,16 +115,14 @@ endef
 
 $(eval $(call KernelPackage,GobiNet))
 
-#brcmfmac -> ap6356s
-define KernelPackage/brcmfmac-buildin
-  SUBMENU:=Wireless Drivers
-  TITLE:=not backport wireless devices (for brcm wifi soc in kernel) support
-  DEPENDS:=@TARGET_sunxi:TARGET_sunxi_cortexa53_DEVICE_sun50i-h6-tempe-a55
-  KCONFIG:=CONFIG_BRCMFMAC=m \
-  CONFIG_BRCMUTIL=m
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko \
-  $(LINUX_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko
-  AUTOLOAD:=$(call AutoProbe,brcmfmac)
+#sunxi watchdog
+define KernelPackage/sunxi_wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SUNXI watchdog support
+  DEPENDS:=@TARGET_sunxi
+  KCONFIG:=SUNXI_WATCHDOG=m
+  FILES:=$(LINUX_DIR)/drivers/watchdog/sunxi_wdt.ko
+  AUTOLOAD:=$(call AutoProbe,sunxi_wdt)
 endef
 
-$(eval $(call KernelPackage,brcmfmac-buildin))
+$(eval $(call KernelPackage,sunxi_wdt))
