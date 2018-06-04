@@ -3,6 +3,9 @@
 . /lib/functions.sh
 board=`board_name`
 
+uci set fstab.@global[0].anon_mount='1'
+uci commit fstab
+
 case "$board" in
 	"tempe,tempe-h6v2")
 		# allow lan/wan input
