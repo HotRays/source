@@ -12,8 +12,8 @@ move_config() {
 			if [ -f /boot/sysupgrade.tgz ]; then
 				mount /boot -o remount,rw,noatime
 				mv -f /boot/sysupgrade.tgz /
-				mount /boot -o remount,ro,noatime
 			fi
+			mount /boot -o remount,ro,noatime
 			mount --bind /boot/boot /boot
 		fi
 	fi
