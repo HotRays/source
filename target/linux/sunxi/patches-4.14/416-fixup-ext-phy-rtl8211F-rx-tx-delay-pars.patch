@@ -1,0 +1,91 @@
+From 081b85ebf19c39a17d701c69645d40a844726f06 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Sat, 30 Jun 2018 13:38:24 +0800
+Subject: [PATCH] fixup ext phy rtl8211F rx/tx delay pars
+
+---
+ .../boot/dts/allwinner/sun50i-h6-tempe-a55.dts    | 15 +++++++++------
+ .../boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts   |  4 ++--
+ drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c |  5 ++++-
+ 3 files changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+index 3568e183d..c0f592871 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+@@ -83,18 +83,21 @@
+ 
+ &emac {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&inner_rmii_pins>;
+-	phy-mode = "rmii";
+-	phy-handle = <&ac200_rmii_phy>;
++	pinctrl-0 = <&ext_rgmii_pins>;
++	phy-mode = "rgmii";
++	phy-handle = <&ext_rgmii_phy>;
+ 	phy-supply = <&reg_aldo2>;
+-	allwinner,rx-delay-ps = <200>;
+-	allwinner,tx-delay-ps = <200>;
++	allwinner,rx-delay-ps = <500>;
++	allwinner,tx-delay-ps = <500>;
+ 
+ 	status = "okay";
+ };
+ 
+ &mdio {
+-	ac200_rmii_phy: ethernet-phy@1 {
++	reset-delay-us = <100000>; /* 0.1s */
++	reset-gpios = <&pio 3 14 GPIO_ACTIVE_LOW>; /* PD14 */
++
++	ext_rgmii_phy: ethernet-phy@1 {
+ 		compatible = "ethernet-phy-ieee802.3-c22";
+ 		reg = <1>;
+ 	};
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
+index f9e3d0620..01f614650 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
+@@ -82,8 +82,8 @@
+ 	phy-mode = "rgmii";
+ 	phy-handle = <&ext_rgmii_phy>;
+ 	phy-supply = <&reg_gmac_2v5>;
+-	allwinner,rx-delay-ps = <200>;
+-	allwinner,tx-delay-ps = <200>;
++	allwinner,rx-delay-ps = <500>;
++	allwinner,tx-delay-ps = <500>;
+ 	status = "okay";
+ };
+ 
+diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
+index bf67da40a..7453fae81 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
+@@ -106,7 +106,7 @@ static const struct emac_variant emac_variant_a64 = {
+ };
+ 
+ static const struct emac_variant emac_variant_h6 = {
+-	.default_syscon_value = 0x148000,
++	.default_syscon_value = 0x58000,
+ 	/*
+ 	 * The "Internal PHY" of H6 is not on the die. It's on the co-packaged
+ 	 * AC200 chip instead.
+@@ -842,6 +842,7 @@ static int sun8i_dwmac_set_syscon(struct stmmac_priv *priv)
+ 		 * set to 0 (external PHY).
+ 		 */
+ 		reg &= ~(H3_EPHY_SELECT);
++		reg &= ~(H3_EPHY_CLK_SEL);
+ 	}
+ 
+ 	if (!of_property_read_u32(node, "allwinner,tx-delay-ps", &val)) {
+@@ -900,6 +901,8 @@ static int sun8i_dwmac_set_syscon(struct stmmac_priv *priv)
+ 	}
+ 
+ 	regmap_write(gmac->regmap, SYSCON_EMAC_REG, reg);
++	ret = regmap_read(gmac->regmap, SYSCON_EMAC_REG, &val);
++	printk("ROY: dump dwmac syscon reg: 0x%x, par: 0x%x, %d\n", val, reg, ret);
+ 
+ 	return 0;
+ }
+-- 
+2.17.1
+

@@ -2256,7 +2256,7 @@ CONFIG_PACKAGE_dropbear=y
 #
 CONFIG_DROPBEAR_CURVE25519=y
 # CONFIG_DROPBEAR_ECC is not set
-# CONFIG_DROPBEAR_ZLIB is not set
+CONFIG_DROPBEAR_ZLIB=y
 # CONFIG_PACKAGE_ead is not set
 CONFIG_PACKAGE_firewall=y
 CONFIG_PACKAGE_fstools=y
@@ -4046,7 +4046,7 @@ CONFIG_PACKAGE_libuclient=y
 # CONFIG_PACKAGE_libugpio is not set
 # CONFIG_PACKAGE_libunbound is not set
 # CONFIG_PACKAGE_libunistring is not set
-# CONFIG_PACKAGE_libunwind is not set
+CONFIG_PACKAGE_libunwind=y
 # CONFIG_PACKAGE_libupnp is not set
 # CONFIG_PACKAGE_libupnpp is not set
 # CONFIG_PACKAGE_liburcu is not set
@@ -5232,7 +5232,8 @@ CONFIG_PACKAGE_6to4=y
 # CONFIG_PACKAGE_eapol-test is not set
 # CONFIG_PACKAGE_esniper is not set
 # CONFIG_PACKAGE_etherwake is not set
-# CONFIG_PACKAGE_ethtool is not set
+CONFIG_PACKAGE_ethtool=y
+CONFIG_ETHTOOL_PRETTY_DUMP=y
 # CONFIG_PACKAGE_fakeidentd is not set
 # CONFIG_PACKAGE_fping is not set
 # CONFIG_PACKAGE_gnunet is not set
@@ -5298,7 +5299,7 @@ CONFIG_PACKAGE_libipset=y
 # CONFIG_PACKAGE_map is not set
 # CONFIG_PACKAGE_map-t is not set
 # CONFIG_PACKAGE_memcached is not set
-# CONFIG_PACKAGE_mii-tool is not set
+CONFIG_PACKAGE_mii-tool=y
 # CONFIG_PACKAGE_mikrotik-btest is not set
 # CONFIG_PACKAGE_mini_snmpd is not set
 # CONFIG_PACKAGE_minimalist-pcproxy is not set
@@ -5431,11 +5432,6 @@ CONFIG_PACKAGE_wpad=y
 # CONFIG_PACKAGE_base-config-setting is not set
 
 #
-# Fast Forward Stacks
-#
-# CONFIG_PACKAGE_kmod-natflow is not set
-
-#
 # Macvlan
 #
 # CONFIG_PACKAGE_luci-app-macvlan is not set
@@ -5462,6 +5458,7 @@ CONFIG_PACKAGE_kmod-rproxy=m
 #
 # Puppies
 #
+# CONFIG_PACKAGE_OrangeVR is not set
 CONFIG_PACKAGE_quectel-CM=y
 
 #
