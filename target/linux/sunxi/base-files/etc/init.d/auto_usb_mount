@@ -25,4 +25,15 @@ auto_mount_boot()
 
 boot() {
 	auto_mount_boot &
+
+	#LEDS status update
+	. /lib/functions.sh
+	board=`board_name`
+
+	case "$board" in
+	"tempe,tempe-h6v2")
+		echo none > /sys/class/leds/RED/trigger
+		echo 1 > /sys/class/leds/RED/brightness
+	;;
+	esac
 }

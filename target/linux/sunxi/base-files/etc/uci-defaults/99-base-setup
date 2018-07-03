@@ -15,5 +15,8 @@ case "$board" in
 		# drop network.lan
 		uci delete network.lan
 		uci commit network
+
+		# default passwd
+		cp /usr/share/base-config/etc/shadow /etc/shadow
 	;;
 esac

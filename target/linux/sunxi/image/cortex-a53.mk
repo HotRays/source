@@ -5,6 +5,24 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+# Layout simple README:
+#
+# #8k SPL, 40k uboot.itb, 1M dtb + 32k SPL + 64k u-boot.bin, 2M kernel, 
+# mmc dev 1
+# mmc read 0x4fa00000 0x800 0x20
+# mmc read 0x40080000 0x1000 0xd000
+# booti 0x40080000 - 0x4fa00000
+
+# RAM boot README:
+#
+# setenv bootargs 'earlyprintk console=ttyS0,115200 root=/dev/ram0 init=/init rootwait'
+# booti 0x40080000 - 0x4fa00000
+# setenv bootargs "earlyprintk console=ttyS0,115200 root=/dev/mmcblk2p2 rootfstype=ext4 rootwait"
+# booti 0x40080000 - 0x4fa00000
+#
+
+
 ifeq ($(SUBTARGET),cortexa53)
 
 define Device/sun50i-h5-nanopi-neo-plus2
