@@ -5459,6 +5459,7 @@ CONFIG_PACKAGE_kmod-rproxy=m
 # Puppies
 #
 # CONFIG_PACKAGE_OrangeVR is not set
+CONFIG_PACKAGE_TempeComFiles=y
 CONFIG_PACKAGE_quectel-CM=y
 
 #

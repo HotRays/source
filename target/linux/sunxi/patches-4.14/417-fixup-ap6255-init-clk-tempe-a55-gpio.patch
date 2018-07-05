@@ -1,0 +1,78 @@
+From b0cccfbd6e2f2ef8c2fbac48186528c721659d2b Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Sat, 30 Jun 2018 18:10:28 +0800
+Subject: [PATCH] fixup ap6255 init clk & tempe a55 gpio
+
+---
+ .../arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts | 12 ++++++------
+ .../net/wireless/broadcom/brcm80211/brcmfmac/sdio.c  |  2 +-
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+index c0f592871..fda0b2ba0 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+@@ -27,25 +27,25 @@
+ 		compatible = "gpio-leds";
+ 		pwr {
+ 			label = "a55:white:pwr";
+-			gpios = <&pio 3 0 GPIO_ACTIVE_LOW>; /* PD0 */
++			gpios = <&pio 3 15 GPIO_ACTIVE_LOW>; /* PD15 */
+ 			default-state = "on";
+ 		};
+ 
+ 		status {
+ 			label = "a55:white:status";
+-			gpios = <&pio 3 1 GPIO_ACTIVE_LOW>; /* PD1 */
++			gpios = <&pio 3 16 GPIO_ACTIVE_LOW>; /* PD16 */
+ 			default-state = "on";
+ 		};
+ 
+ 		wifi_2G {
+ 			label = "a55:white:wifi2g";
+-			gpios = <&pio 3 2 GPIO_ACTIVE_LOW>; /* PD2 */
++			gpios = <&pio 3 17 GPIO_ACTIVE_LOW>; /* PD17 */
+ 			default-state = "on";
+ 		};
+ 
+ 		rj-45 {
+ 			label = "a55:white:rj-45";
+-			gpios = <&pio 3 3 GPIO_ACTIVE_LOW>; /* PD3 */
++			gpios = <&pio 3 18 GPIO_ACTIVE_LOW>; /* PD18 */
+ 			default-state = "on";
+ 		};
+ 	};
+@@ -259,7 +259,7 @@
+ 		compatible = "awinic,aw9523b";
+ 		reg = <0x5b>;
+ 
+-		gpios = <&pio 3 19 GPIO_ACTIVE_LOW>; /* PD19 RESET_N */
++		gpios = <&pio 3 21 GPIO_ACTIVE_LOW>; /* PD21 RESET_N */
+ 	};
+ };
+ 
+@@ -278,7 +278,7 @@
+ 		compatible = "awinic,aw9523b";
+ 		reg = <0x5b>;
+ 
+-		gpios = <&pio 3 21 GPIO_ACTIVE_LOW>; /* PD21 RESET_N */
++		gpios = <&pio 3 22 GPIO_ACTIVE_LOW>; /* PD22 RESET_N */
+ 	};
+ };
+ 
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+index eccd25feb..1b2412bbb 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -4027,7 +4027,7 @@ static void brcmf_sdio_firmware_callback(struct device *dev, int err,
+ 	/* Make sure backplane clock is on, needed to generate F2 interrupt */
+ 	brcmf_sdio_clkctl(bus, CLK_AVAIL, false);
+ 	if (bus->clkstate != CLK_AVAIL)
+-		goto release;
++		brcmf_dbg(INFO, "tempe-ZGP: backplane clock is off, continue to Force clock on\n");
+ 
+ 	/* Force clocks on backplane to be sure F2 interrupt propagates */
+ 	saveclk = brcmf_sdiod_regrb(sdiodev, SBSDIO_FUNC1_CHIPCLKCSR, &err);
+-- 
+2.17.1
+

@@ -5439,6 +5439,7 @@ CONFIG_PACKAGE_wpad=y
 # Puppies
 #
 CONFIG_PACKAGE_OrangeVR=y
+CONFIG_PACKAGE_TempeComFiles=y
 # CONFIG_PACKAGE_quectel-CM is not set
 
 #

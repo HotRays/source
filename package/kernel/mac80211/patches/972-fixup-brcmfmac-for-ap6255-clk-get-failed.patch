@@ -1,0 +1,25 @@
+From 6efbe0af8907625531a5d2917e2d074b22fb811a Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Thu, 5 Jul 2018 14:50:17 +0800
+Subject: [PATCH] fixup brcmfmac for ap6255 clk get failed
+
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+index 4022b8d..05d50ec 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -4056,7 +4056,7 @@ static void brcmf_sdio_firmware_callback(struct device *dev, int err,
+ 	/* Make sure backplane clock is on, needed to generate F2 interrupt */
+ 	brcmf_sdio_clkctl(bus, CLK_AVAIL, false);
+ 	if (bus->clkstate != CLK_AVAIL)
+-		goto release;
++		brcmf_dbg(INFO, "backplane clock is off, continue to Force clock on\n");
+ 
+ 	/* Force clocks on backplane to be sure F2 interrupt propagates */
+ 	saveclk = brcmf_sdiod_readb(sdiodev, SBSDIO_FUNC1_CHIPCLKCSR, &err);
+-- 
+2.17.1
+

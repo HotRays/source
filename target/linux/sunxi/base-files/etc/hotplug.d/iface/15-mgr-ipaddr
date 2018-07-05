@@ -10,11 +10,6 @@ case "$ACTION" in
 				ifconfig $DEVICE:1 169.254.254.254 netmask 255.255.0.0
 				iptables -D INPUT -i $DEVICE -d 169.254.254.254 -j ACCEPT 2>/dev/null
 				iptables -I INPUT -i $DEVICE -d 169.254.254.254 -j ACCEPT 2>/dev/null
-
-				#update leds trigger
-				echo 1 > /sys/class/leds/GREEN/brightness
-				# echo heartbeat > /sys/class/leds/GREEN/trigger
-				echo heartbeat > /sys/class/leds/RED/trigger
 			;;
 			*)
 			;;

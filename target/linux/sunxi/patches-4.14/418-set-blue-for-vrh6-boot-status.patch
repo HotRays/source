@@ -1,0 +1,39 @@
+From 0c19ef6d17a3c913371ce0ae85e0eae38942b456 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Thu, 5 Jul 2018 21:22:34 +0800
+Subject: [PATCH] set blue led for boot status
+
+---
+ arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
+index 01f614650..07c120c21 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-h6v2.dts
+@@ -28,19 +28,20 @@
+ 		pwr {
+ 			label = "RED";
+ 			gpios = <&r_pio 1 0 GPIO_ACTIVE_LOW>;
+-			default-state = "on";
++			default-state = "off";
+ 		};
+ 
+ 		link {
+ 			label = "BLUE";
+ 			gpios = <&r_pio 1 1 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "heartbeat";
+ 			default-state = "on";
+ 		};
+ 
+ 		disk {
+ 			label = "GREEN";
+ 			gpios = <&r_pio 1 2 GPIO_ACTIVE_LOW>;
+-			default-state = "on";
++			default-state = "off";
+ 		};
+ 	};
+ 
+-- 
+2.17.1
+

@@ -32,8 +32,8 @@ boot() {
 
 	case "$board" in
 	"tempe,tempe-h6v2")
-		echo none > /sys/class/leds/RED/trigger
-		echo 1 > /sys/class/leds/RED/brightness
+		echo none > /sys/class/leds/BLUE/trigger
+		echo 1 > /sys/class/leds/BLUE/brightness
 	;;
 	esac
 }
