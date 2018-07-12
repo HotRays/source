@@ -92,3 +92,15 @@ define KernelPackage/sound-mt7620/description
 endef
 
 $(eval $(call KernelPackage,sound-mt7620))
+
+
+define KernelPackage/GobiNet
+  SUBMENU:=$(USB_MENU)
+  TITLE:=QCOM GobiNet LTE/CDMA support
+  DEPENDS:= +kmod-usb-net $(1)
+  KCONFIG:=CONFIG_USB_NET_GOBINET=m
+  FILES:=$(LINUX_DIR)/drivers/net/usb/GobiNet.ko
+  AUTOLOAD:=$(call AutoProbe,GobiNet)
+endef
+
+$(eval $(call KernelPackage,GobiNet))
