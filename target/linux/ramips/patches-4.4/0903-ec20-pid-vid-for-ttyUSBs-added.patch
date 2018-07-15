@@ -1,0 +1,115 @@
+From 1c7ba53d589aa6518beb0d40867bb8137aa3e78c Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Sun, 15 Jul 2018 15:19:43 +0800
+Subject: [PATCH] add ec20 pid vid for ttyUSBs
+
+---
+ drivers/usb/serial/option.c   | 45 ++++++++++++++++++++++++++++++++++-
+ drivers/usb/serial/usb_wwan.c | 14 +++++++++++
+ 2 files changed, 58 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index d96d423d..51e9aff3 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -233,6 +233,18 @@ static void option_instat_callback(struct urb *urb);
+ #define BANDRICH_PRODUCT_1012			0x1012
+ 
+ #define QUALCOMM_VENDOR_ID			0x05C6
++/* These Quectel products use Qualcomm's vendor ID */
++#define QUECTEL_PRODUCT_UC20			0x9003
++#define QUECTEL_PRODUCT_UC15			0x9090
++#define QUECTEL_PRODUCT_EC20			0x9215
++/* These Yuga products use Qualcomm's vendor ID */
++#define YUGA_PRODUCT_CLM920_NC5			0x9625
++
++#define QUECTEL_VENDOR_ID			0x2c7c
++/* These Quectel products use Quectel's vendor ID */
++#define QUECTEL_PRODUCT_EC21			0x0121
++#define QUECTEL_PRODUCT_EC25			0x0125
++#define QUECTEL_PRODUCT_BG96			0x0296
+ 
+ #define CMOTECH_VENDOR_ID			0x16d8
+ #define CMOTECH_PRODUCT_6001			0x6001
+@@ -1141,7 +1153,18 @@ static const struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x6613)}, /* Onda H600/ZTE MF330 */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x0023)}, /* ONYX 3G device */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9000)}, /* SIMCom SIM5218 */
+-	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9003), /* Quectel UC20 */
++	/* Quectel products using Qualcomm vendor ID */
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_UC15)},
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_UC20),
++	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_EC20)},
++
++	/* Quectel products using Quectel vendor ID */
++	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC21),
++	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
++	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC25),
++	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
++	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_BG96),
+ 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
+ 	{ USB_DEVICE(CMOTECH_VENDOR_ID, CMOTECH_PRODUCT_6001) },
+ 	{ USB_DEVICE(CMOTECH_VENDOR_ID, CMOTECH_PRODUCT_CMU_300) },
+@@ -2000,6 +2023,9 @@ static struct usb_serial_driver option_1port_device = {
+ #ifdef CONFIG_PM
+ 	.suspend           = usb_wwan_suspend,
+ 	.resume            = usb_wwan_resume,
++#if 1 //Added by Quectel
++	.reset_resume 	   = usb_wwan_resume,
++#endif
+ #endif
+ };
+ 
+@@ -2039,6 +2065,23 @@ static int option_probe(struct usb_serial *serial,
+ 	    iface_desc->bInterfaceClass != USB_CLASS_CDC_DATA)
+ 		return -ENODEV;
+ 
++#if 1 //Added by Quectel
++	//Quectel UC20's interface 4 can be used as USB Network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x9003)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++	//Quectel EC20's interface 4 can be used as USB Network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x9008)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++	//Quectel EC21&EC25&EC20 R2.0's interface 4 can be used as USB Network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++#endif
++
+ 	/* Store the blacklist info so we can use it during attach. */
+ 	usb_set_serial_data(serial, (void *)blacklist);
+ 
+diff --git a/drivers/usb/serial/usb_wwan.c b/drivers/usb/serial/usb_wwan.c
+index be9cb61b..6b9a6c56 100644
+--- a/drivers/usb/serial/usb_wwan.c
++++ b/drivers/usb/serial/usb_wwan.c
+@@ -505,6 +505,20 @@ static struct urb *usb_wwan_setup_urb(struct usb_serial_port *port,
+ 			  usb_sndbulkpipe(serial->dev, endpoint) | dir,
+ 			  buf, len, callback, ctx);
+ 
++#if 1 //Added by Quectel for Zero Packet
++	if (dir == USB_DIR_OUT) {
++		struct usb_device_descriptor *desc = &serial->dev->descriptor;
++		if (desc->idVendor == cpu_to_le16(0x05C6) && desc->idProduct == cpu_to_le16(0x9090))
++			urb->transfer_flags |= URB_ZERO_PACKET;
++		if (desc->idVendor == cpu_to_le16(0x05C6) && desc->idProduct == cpu_to_le16(0x9003))
++			urb->transfer_flags |= URB_ZERO_PACKET;
++		if (desc->idVendor == cpu_to_le16(0x05C6) && desc->idProduct == cpu_to_le16(0x9008))
++			urb->transfer_flags |= URB_ZERO_PACKET;
++		if (desc->idVendor == cpu_to_le16(0x2C7C))
++			urb->transfer_flags |= URB_ZERO_PACKET;
++	}
++#endif
++
+ 	return urb;
+ }
+ 
+-- 
+2.17.1
+
