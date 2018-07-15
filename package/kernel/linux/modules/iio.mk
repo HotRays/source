@@ -86,6 +86,41 @@ endef
 
 $(eval $(call KernelPackage,iio-dht11))
 
+define KernelPackage/iio-hts221
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-core @GPIO_SUPPORT @USES_DEVICETREE
+  TITLE:=HTS221 (and compatible) humidity and temperature sensors
+  KCONFIG:= \
+	CONFIG_HTS221 \
+  CONFIG_HTS221_I2C=y \
+  CONFIG_IIO_TRIGGERED_BUFFER=y
+  FILES:=$(LINUX_DIR)/drivers/iio/humidity/hts221.ko \
+    $(LINUX_DIR)/drivers/iio/humidity/hts221_i2c.ko
+  AUTOLOAD:=$(call AutoLoad,56,hts221-i2c)
+endef
+
+define KernelPackage/iio-hts221/description
+ support for HTS221 digitial humidity and temperature sensors
+endef
+
+$(eval $(call KernelPackage,iio-hts221))
+
+define KernelPackage/mma8x5x
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-iio-core @GPIO_SUPPORT @USES_DEVICETREE
+  TITLE:=MMA8x5x Freescale / NXP 3-axis accelerometers
+  KCONFIG:= \
+  CONFIG_MMA8452=y
+  FILES:=$(LINUX_DIR)/drivers/iio/accel/mma8452.ko
+  AUTOLOAD:=$(call AutoLoad,56,mma8452)
+endef
+
+define KernelPackage/mma8x5x/description
+ support MMA8x5x Freescale / NXP 3-axis accelerometers sensors
+endef
+
+$(eval $(call KernelPackage,mma8x5x))
+
 define KernelPackage/iio-bmp280
   SUBMENU:=$(IIO_MENU)
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
