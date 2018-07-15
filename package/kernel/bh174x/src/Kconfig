@@ -1,0 +1,12 @@
+config ROHM_BH1749
+        tristate "Rohm BH174x Color Sensor support"
+        depends on I2C
+        help
+          Say yes here to enable support for the Rohm BH1749 Color & IR Sensors.
+
+config ROHM_BH1745
+        tristate "Rohm BH1745 Color Sensor support"
+        depends on I2C
+        help
+          Say yes here to enable support for the Rohm BH1745 Color Sensors.
+
