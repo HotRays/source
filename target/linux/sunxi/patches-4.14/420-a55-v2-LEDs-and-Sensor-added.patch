@@ -1,0 +1,79 @@
+From 8fb490f2eeb4af45ea38cd4b7ba20ae346fb5cac Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Sun, 15 Jul 2018 18:30:48 +0800
+Subject: [PATCH] fixup A55 v2 LEDs and Sensor added
+
+---
+ .../dts/allwinner/sun50i-h6-tempe-a55.dts     | 38 ++++++++++++++++---
+ 1 file changed, 32 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+index f65f123ba..e0187b007 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+@@ -25,8 +25,8 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
+-		pwr {
+-			label = "a55:white:pwr";
++		RJ45 {
++			label = "a55:white:RJ45";
+ 			gpios = <&pio 3 15 GPIO_ACTIVE_LOW>; /* PD15 */
+ 			default-state = "on";
+ 		};
+@@ -37,14 +37,14 @@
+ 			default-state = "on";
+ 		};
+ 
+-		wifi_2G {
+-			label = "a55:white:wifi2g";
++		LTE {
++			label = "a55:white:LTE";
+ 			gpios = <&pio 3 17 GPIO_ACTIVE_LOW>; /* PD17 */
+ 			default-state = "on";
+ 		};
+ 
+-		rj-45 {
+-			label = "a55:white:rj-45";
++		WiFi {
++			label = "a55:white:WiFi";
+ 			gpios = <&pio 3 18 GPIO_ACTIVE_LOW>; /* PD18 */
+ 			default-state = "on";
+ 		};
+@@ -267,6 +267,32 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&twi1_pins>;
+ 	status = "okay";
++
++	mma8653: i2c@1d {
++		compatible = "fsl,mma8653";
++		reg = <0x1d>;
++
++		interrupt-parent = <&pio>;
++		interrupts = <5 0>;
++		interrupt-names = "INT2";
++		//<&pio 8 7 GPIO_ACTIVE_LOW>; /* PH7 INTR */
++	};
++
++	hts221: i2c@5f {
++		compatible = "st,hts221";
++		reg = <0x5f>;
++
++		interrupt-parent = <&pio>;
++		interrupts = <0 1>;
++		//<&pio 8 10 GPIO_ACTIVE_EDG>; /* PH10 INTR */
++	};
++
++	bh1745: i2c@38 {
++		compatible = "rohm,bh1745";
++		reg = <0x38>;
++
++		//<&pio 8 8 GPIO_ACTIVE_EDG>; /* PH8 INTR */
++	};
+ };
+ 
+ &twi2 {
+-- 
+2.17.1
+
