@@ -13,7 +13,9 @@ boot() {
 		rmdir /tmp/usb_reset
 		return 0
 	}
-	test -f /tmp/usb_reset/usb_reset_factory || test -f /tmp/usb_reset/usb_reset_factory.txt || {
+	test -f /tmp/usb_reset/usb_reset_factory || \
+		test -f /tmp/usb_reset/usb_reset_factory.txt || \
+		test -f /tmp/usb_reset/p.usb_reset_factory || {
 		umount /tmp/usb_reset
 		rmdir /tmp/usb_reset
 		return 0
