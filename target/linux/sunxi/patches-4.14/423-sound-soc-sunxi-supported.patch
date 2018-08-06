@@ -1,0 +1,3040 @@
+From 0cdd4976e1ddc0e742f061afb7ef0576f6ccff7a Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Mon, 6 Aug 2018 10:30:17 +0800
+Subject: [PATCH 1/3] sound soc sunxi supported
+
+---
+ arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi |   41 +-
+ drivers/mfd/ac200.c                          |    2 +
+ include/video/drv_hdmi.h                     |   37 +
+ sound/soc/soc-core.c                         |   14 +-
+ sound/soc/soc-dapm.c                         |   14 +-
+ sound/soc/soc-generic-dmaengine-pcm.c        |    2 +-
+ sound/soc/sunxi/Kconfig                      |   29 +-
+ sound/soc/sunxi/Makefile                     |   11 +-
+ sound/soc/sunxi/acx00-codec.c                |   44 +-
+ sound/soc/sunxi/sunxi-sndahub.c              |   15 +-
+ sound/soc/sunxi/sunxi-snddaudio.c            |   15 +-
+ sound/soc/sunxi/sunxi-sndhdmi.c              |    2 +-
+ sound/soc/sunxi/sunxi_ahub.c                 |   10 +-
+ sound/soc/sunxi/sunxi_ahub_cpudai.c          |    9 +-
+ sound/soc/sunxi/sunxi_ahub_daudio.c          |   61 +-
+ sound/soc/sunxi/sunxi_daudio.c               | 1526 ++++++++++++++++++
+ sound/soc/sunxi/sunxi_daudio.h               |  332 ++++
+ sound/soc/sunxi/sunxi_dma.c                  |   21 +-
+ sound/soc/sunxi/{sndhdmi.c => sunxi_hdmi.c}  |   42 -
+ 19 files changed, 2103 insertions(+), 124 deletions(-)
+ create mode 100644 include/video/drv_hdmi.h
+ create mode 100644 sound/soc/sunxi/sunxi_daudio.c
+ create mode 100644 sound/soc/sunxi/sunxi_daudio.h
+ rename sound/soc/sunxi/{sndhdmi.c => sunxi_hdmi.c} (88%)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
+index a3833607d..a963d7089 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
+@@ -133,6 +133,23 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		dma0:dma-controller@03002000 {
++			compatible = "allwinner,sun50i-dma";
++			reg = <0x03002000 0x1000>;
++			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_DMA>;
++			clock-names = "dma";
++			resets = <&ccu RST_BUS_DMA>;
++			reset-names = "dma";
++			#dma-cells = <1>;
++		};
++
++		mbus0:mbus-controller@04002000 {
++			compatible = "allwinner,sun50i-mbus";
++			reg = <0x04002000 0x1000>;
++			#mbus-cells = <1>;
++		};
++
+ 		gic: interrupt-controller@3021000 {
+ 			compatible = "arm,gic-400";
+ 			reg = <0x03021000 0x1000>,
+@@ -717,9 +734,9 @@
+ 
+ 		ahub_daudio0:ahub_daudio0@0x05097000{
+ 			compatible = "allwinner,sunxi-ahub-daudio";
+-			reg = <0x0 0x05097000 0x0 0xADF>;
++			reg = <0x05097000 0xADF>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_AUDIO_HUB>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&ahub_daudio0_pins>;
+ 			pinconfig = <0x1>;
+ 			frametype = <0x0>;
+@@ -731,12 +748,12 @@
+ 			tdm_config = <0x01>;
+ 			tdm_num = <0x0>;
+ 			mclk_div = <0x0>;
+-			status = "disable";
++			status = "disabled";
+ 		};
+ 
+ 		ahub_daudio1:ahub_daudio1@0x05097000{
+ 			compatible = "allwinner,sunxi-ahub-daudio";
+-			reg = <0x0 0x05097000 0x0 0xADF>;
++			reg = <0x05097000 0xADF>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_AUDIO_HUB>;
+ 			pinconfig = <0x0>;
+ 			frametype = <0x0>;
+@@ -753,9 +770,9 @@
+ 
+ 		ahub_daudio2:ahub_daudio2@0x05097000{
+ 			compatible = "allwinner,sunxi-ahub-daudio";
+-			reg = <0x0 0x05097000 0x0 0xADF>;
++			reg = <0x05097000 0xADF>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_AUDIO_HUB>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&ahub_daudio2_pins>;
+ 			pinconfig = <0x1>;
+ 			frametype = <0x0>;
+@@ -774,7 +791,7 @@
+ 			compatible = "allwinner,sunxi-ahub-daudio";
+ 			reg = <0x05097000 0xADF>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_AUDIO_HUB>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&ahub_daudio3_pins>;
+ 			pinconfig = <0x1>;
+ 			frametype = <0x0>;
+@@ -793,7 +810,7 @@
+ 			compatible = "allwinner,sunxi-daudio";
+ 			reg = <0x05090000 0x74>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_BUS_I2S0>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&daudio0_pins>;
+ 			pcm_lrck_period =  <0x20>;
+ 			slot_width_select =  <0x20>;
+@@ -811,14 +828,14 @@
+ 			compatible = "allwinner,sunxi-tdmhdmi";
+ 			reg = <0x05091000 0x74>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_BUS_I2S1>;
+-			status = "disabled";
++			status = "okay";
+ 		};
+ 
+ 		daudio2:daudio@0x05092000 {
+ 			compatible = "allwinner,sunxi-daudio";
+ 			reg = <0x05092000 0x74>;
+ 		    clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_BUS_I2S2>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&daudio2_pins>;
+ 			pcm_lrck_period =  <0x20>;
+ 			slot_width_select =  <0x20>;
+@@ -836,7 +853,7 @@
+ 			compatible = "allwinner,sunxi-daudio";
+ 			reg = <0x0508f000 0x74>;
+ 			clocks = <&ccu CLK_PLL_AUDIO>,<&ccu CLK_BUS_I2S3>;
+-			pinctrl-names = "default","sleep";
++			pinctrl-names = "default";
+ 			pinctrl-0 = <&daudio3_pins>;
+ 			pcm_lrck_period = <0x20>;
+ 			slot_width_select = <0x20>;
+@@ -854,7 +871,7 @@
+ 			compatible = "allwinner,sunxi-daudio0-machine";
+ 			sunxi,daudio-controller = <&daudio0>;
+ 			sunxi,cpudai-controller = <&ahub_daudio0>;
+-			status = "disable";
++			status = "disabled";
+ 		};
+ 
+ 		sndhdmi:sound@1{
+diff --git a/drivers/mfd/ac200.c b/drivers/mfd/ac200.c
+index 9797c6bc3..cb1efcb3f 100644
+--- a/drivers/mfd/ac200.c
++++ b/drivers/mfd/ac200.c
+@@ -255,6 +255,8 @@ static int acx00_i2c_probe(struct i2c_client *i2c,
+ 	int ret = 0, value;
+ 
+ 	printk("acx00_i2c_probe\n");
++	request_module("pwm-sunxi");
++
+ 	acx00 = devm_kzalloc(&i2c->dev, sizeof(struct acx00), GFP_KERNEL);
+ 	if (acx00 == NULL)
+ 		return -ENOMEM;
+diff --git a/include/video/drv_hdmi.h b/include/video/drv_hdmi.h
+new file mode 100644
+index 000000000..d13e1e627
+--- /dev/null
++++ b/include/video/drv_hdmi.h
+@@ -0,0 +1,37 @@
++
++#ifndef __DRV_HDMI_H__
++#define __DRV_HDMI_H__
++
++typedef struct
++{
++	__u8    hw_intf;        /* 0:iis  1:spdif 2:pcm */
++	__u16	fs_between;     /* fs */
++	__u32   sample_rate;    /*sample rate*/
++	__u8    clk_edge;       /* 0:*/
++	__u8    ch0_en;         /* 1 */
++	__u8    ch1_en;         /* 0 */
++	__u8 	ch2_en;         /* 0 */
++	__u8 	ch3_en;         /* 0 */
++	__u8	word_length;    /* 32 */
++	__u8    shift_ctl;      /* 0 */
++	__u8    dir_ctl;        /* 0 */
++	__u8    ws_pol;
++	__u8    just_pol;
++	__u8    channel_num;
++	__u8	data_raw;
++	__u8    sample_bit;
++	__u8    ca;     /* channel allocation */
++}hdmi_audio_t;
++
++typedef struct
++{
++    __s32 (*hdmi_audio_enable)(__u8 mode, __u8 channel);
++    __s32 (*hdmi_set_audio_para)(hdmi_audio_t * audio_para);
++    __s32 (*hdmi_is_playback)(void);
++}__audio_hdmi_func;
++
++void audio_set_hdmi_func(__audio_hdmi_func *hdmi_func);
++#if defined (CONFIG_SND_SUNXI_SOC_AUDIOHUB_INTERFACE)
++void audio_set_muti_hdmi_func(__audio_hdmi_func *hdmi_func);
++#endif
++#endif
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index ef2b92484..46b64d539 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -55,13 +55,13 @@ struct dentry *snd_soc_debugfs_root;
+ EXPORT_SYMBOL_GPL(snd_soc_debugfs_root);
+ #endif
+ 
+-#ifdef dev_dbg
+-#undef dev_dbg
+-#define dev_dbg(dev, format, arg...) \
+-({								\
+-	printk("ROY:"format, ##arg);	\
+-})
+-#endif
++// #ifdef dev_dbg
++// #undef dev_dbg
++// #define dev_dbg(dev, format, arg...) \
++// ({								\
++// 	printk("core: "format, ##arg);	\
++// })
++// #endif
+ 
+ static DEFINE_MUTEX(client_mutex);
+ static LIST_HEAD(platform_list);
+diff --git a/sound/soc/soc-dapm.c b/sound/soc/soc-dapm.c
+index dcef67a9b..1f8f8e953 100644
+--- a/sound/soc/soc-dapm.c
++++ b/sound/soc/soc-dapm.c
+@@ -45,6 +45,14 @@
+ 
+ #include <trace/events/asoc.h>
+ 
++#ifdef dev_dbg
++#undef dev_dbg
++#define dev_dbg(dev, format, arg...) \
++({								\
++	printk("DAPM: "format, ##arg);	\
++})
++#endif
++
+ #define DAPM_UPDATE_STAT(widget, val) widget->dapm->card->dapm_stats.val++;
+ 
+ #define SND_SOC_DAPM_DIR_REVERSE(x) ((x == SND_SOC_DAPM_DIR_IN) ? \
+@@ -2607,8 +2615,10 @@ static int snd_soc_dapm_check_dynamic_path(struct snd_soc_dapm_context *dapm,
+ 		return -EINVAL;
+ 	} else if (!dynamic_source && !dynamic_sink) {
+ 		dev_err(dapm->dev,
+-			"Control not supported for path %s -> [%s] -> %s\n",
+-			source->name, control, sink->name);
++			"Control not supported for path %s:%d -> [%s] -> %s:%d\n",
++			source->name, source->id,
++			control,
++			sink->name, sink->id);
+ 		return -EINVAL;
+ 	}
+ 
+diff --git a/sound/soc/soc-generic-dmaengine-pcm.c b/sound/soc/soc-generic-dmaengine-pcm.c
+index d53786498..0a9c2ee14 100644
+--- a/sound/soc/soc-generic-dmaengine-pcm.c
++++ b/sound/soc/soc-generic-dmaengine-pcm.c
+@@ -28,7 +28,7 @@
+  * The platforms dmaengine driver does not support reporting the amount of
+  * bytes that are still left to transfer.
+  */
+-#define SND_DMAENGINE_PCM_FLAG_NO_RESIDUE BIT(31)
++// #define SND_DMAENGINE_PCM_FLAG_NO_RESIDUE BIT(31)
+ 
+ struct dmaengine_pcm {
+ 	struct dma_chan *chan[SNDRV_PCM_STREAM_LAST + 1];
+diff --git a/sound/soc/sunxi/Kconfig b/sound/soc/sunxi/Kconfig
+index 94e1fdeab..31b3f0d1b 100644
+--- a/sound/soc/sunxi/Kconfig
++++ b/sound/soc/sunxi/Kconfig
+@@ -15,6 +15,7 @@ config SND_AC200_CODEC
+ 	select SND_SOC_GENERIC_DMAENGINE_PCM
+ 	select REGMAP_MMIO
+ 	select MFD_AC200
++	default y
+ 	help
+ 	  Select Y or M to add support for the Codec embedded in the X-Power 
+ 		AC200 and affiliated SoCs.
+@@ -23,6 +24,7 @@ config SND_SUN4I_CODEC
+ 	tristate "Allwinner A10 Codec Support"
+ 	select SND_SOC_GENERIC_DMAENGINE_PCM
+ 	select REGMAP_MMIO
++	default n
+ 	help
+ 	  Select Y or M to add support for the Codec embedded in the Allwinner
+ 	  A10 and affiliated SoCs.
+@@ -32,6 +34,7 @@ config SND_SUN8I_CODEC
+ 	depends on OF
+ 	depends on MACH_SUN8I || COMPILE_TEST
+ 	select REGMAP_MMIO
++	default n
+ 	help
+ 	  This option enables the digital part of the internal audio codec for
+ 	  Allwinner sun8i SoC (and particularly A33).
+@@ -42,6 +45,7 @@ config SND_SUN8I_CODEC_ANALOG
+ 	tristate "Allwinner sun8i Codec Analog Controls Support"
+ 	depends on MACH_SUN8I || (ARM64 && ARCH_SUNXI) || COMPILE_TEST
+ 	select REGMAP
++	default n
+ 	help
+ 	  Say Y or M if you want to add support for the analog controls for
+ 	  the codec embedded in newer Allwinner SoCs.
+@@ -50,6 +54,7 @@ config SND_SUN4I_I2S
+ 	tristate "Allwinner A10 I2S Support"
+ 	select SND_SOC_GENERIC_DMAENGINE_PCM
+ 	select REGMAP_MMIO
++	default n
+ 	help
+ 	  Say Y or M if you want to add support for codecs attached to
+ 	  the Allwinner A10 I2S. You will also need to select the
+@@ -60,43 +65,55 @@ config SND_SUN4I_SPDIF
+ 	depends on OF
+ 	select SND_SOC_GENERIC_DMAENGINE_PCM
+ 	select REGMAP_MMIO
++	default n
+ 	help
+ 	  Say Y or M to add support for the S/PDIF audio block in the Allwinner
+ 	  A10 and affiliated SoCs.
+ 
+ config SND_SUNXI_SOC_SPDIF
+-	tristate "ASoC support for spdif soundcard"
++	tristate "ASoC H6 support for spdif soundcard"
++	#select SND_SUNXI_SOC_DAUDIO_PLATFORM if !SND_SUNXI_SOC_AHUB
+ 	default n
+ 	help
+  	  Say Y or M if you want to add the spdif soundcard include macheine plarform.
+ 
+ config SND_SUNXI_SOC_DMIC
+-	tristate "ASoC support for dmic."
++	tristate "ASoC H6 support for dmic."
++	#select SND_SUNXI_SOC_DAUDIO_PLATFORM if !SND_SUNXI_SOC_AHUB
+ 	help
+  	  Say Y or M if you want to add the dmic interface.
+ 
+ config SND_SUNXI_SOC_HDMIAUDIO
+-	tristate "ASoC support for hdmiaudio."
++	tristate "ASoC H6 support for hdmiaudio."
++	#select SND_SUNXI_SOC_DAUDIO_PLATFORM if !SND_SUNXI_SOC_AHUB
+ 	help
+  	  Say Y or M if you want to add the hdmi platform interface.
+ 
++config SND_SUNXI_SOC_DAUDIO_PLATFORM
++	tristate "ASoC H6 support for daudio platform."
++	depends on !SND_SUNXI_SOC_AHUB
++	select REGMAP_MMIO
++	default n
++	help
++ 	  Say Y or M if you want to add the daudio platform interface.
++
+ config SND_SUNXI_SOC_AHUB
+ 	tristate "ASoC H6 support for audio hub support"
+ 	select REGMAP_MMIO
+ 	select AHUB_FREQ_REQ
+-	select SND_SUNXI_SOC_AUDIO_DMA
+ 	help
+ 	  Say Y or M if you want to using ahub module.
+ 
+ config SUNXI_AUDIO_DEBUG
+ 	bool "Support SUNXI AUDIO DEBUG"
+ 	depends on SND_SUNXI_SOC_AUDIO_DMA
++	default y
+ 	help
+ 	  this is DEBUG function, add by LSH
+ 
+ config SND_SUNXI_SOC_DAUDIO_MACHINE
+-  tristate "ASoC H6 Support For Daudio"
+-	select SND_SUNXI_SOC_AHUB
++  	tristate "ASoC H6 Support For daudio"
++	#select SND_SUNXI_SOC_DAUDIO_PLATFORM if !SND_SUNXI_SOC_AHUB
+ 	help
+     Say Y or M if you want to add the daudio machine interface.
+ 
+diff --git a/sound/soc/sunxi/Makefile b/sound/soc/sunxi/Makefile
+index 33755940d..35933e9d0 100644
+--- a/sound/soc/sunxi/Makefile
++++ b/sound/soc/sunxi/Makefile
+@@ -1,3 +1,5 @@
++# obj-y += spdif-utils.o
++
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_SND_SUN4I_CODEC) += sun4i-codec.o
+ obj-$(CONFIG_SND_SUN4I_I2S) += sun4i-i2s.o
+@@ -9,25 +11,28 @@ obj-$(CONFIG_SND_SUN8I_CODEC) += sun8i-codec.o
+ obj-$(CONFIG_SND_AC200_CODEC) += acx00-codec.o
+ 
+ # # audio hub
+-obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi_dma.o
++
+ obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi_netlink.o
+ obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi_ahub.o
+ obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi_ahub_cpudai.o
+ obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi_ahub_daudio.o
+ obj-$(CONFIG_SND_SUNXI_SOC_AHUB) += sunxi-sndahub.o
+ 
++# # daudio platform
++obj-$(CONFIG_SND_SUNXI_SOC_DAUDIO_PLATFORM) += sunxi_daudio.o
++
+ # # ahub machine
+ obj-$(CONFIG_SND_SUNXI_SOC_DAUDIO_MACHINE) += sunxi-snddaudio.o
+ 
+ # # dmic
++obj-$(CONFIG_SND_SUNXI_SOC_DMIC) += sunxi_dma.o
+ obj-$(CONFIG_SND_SUNXI_SOC_DMIC) += sunxi_dmic.o
+ obj-$(CONFIG_SND_SUNXI_SOC_DMIC) += sunxi-snddmic.o
+ 
+ # # spdif
+ obj-$(CONFIG_SND_SUNXI_SOC_SPDIF) += sunxi_spdif.o
+ obj-$(CONFIG_SND_SUNXI_SOC_SPDIF) += sunxi-sndspdif.o
+-obj-$(CONFIG_SND_SUNXI_SOC_SPDIF) += spdif-utils.o
+ 
+ # # hdmi
+-obj-$(CONFIG_SND_SUNXI_SOC_HDMIAUDIO) += sndhdmi.o
++obj-$(CONFIG_SND_SUNXI_SOC_HDMIAUDIO) += sunxi_hdmi.o
+ obj-$(CONFIG_SND_SUNXI_SOC_HDMIAUDIO) += sunxi-sndhdmi.o
+diff --git a/sound/soc/sunxi/acx00-codec.c b/sound/soc/sunxi/acx00-codec.c
+index 0d81a7c15..3b1932e0a 100644
+--- a/sound/soc/sunxi/acx00-codec.c
++++ b/sound/soc/sunxi/acx00-codec.c
+@@ -41,6 +41,11 @@
+ #define ACX00_DEF_VOL		0x9F9F
+ #undef ACX00_DAPM_LINEOUT
+ 
++#ifdef pr_debug
++#undef pr_debug
++#define pr_debug printk
++#endif
++
+ struct acx00_priv {
+ 	struct acx00 *acx00;	/* parent mfd device struct */
+ 	struct snd_soc_codec *codec;
+@@ -124,6 +129,8 @@ static int acx00_playback_event(struct snd_soc_dapm_widget *w,
+ 				struct snd_kcontrol *k, int event)
+ {
+ 	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);//w->codec;
++	printk("ROY: %s: %d wedget: %s, component: %s event: %x\n", __func__, __LINE__,\
++				w->name, codec->component.name, event);
+ 	switch (event) {
+ 	case	SND_SOC_DAPM_POST_PMU:
+ 		snd_soc_update_bits(codec, AC_SYS_CLK_CTL,
+@@ -160,6 +167,7 @@ static int acx00_capture_event(struct snd_soc_dapm_widget *w,
+ 				struct snd_kcontrol *k, int event)
+ {
+ 	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);//w->codec;
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (event) {
+ 	case	SND_SOC_DAPM_POST_PMU:
+ 		snd_soc_update_bits(codec, AC_SYS_CLK_CTL,
+@@ -218,6 +226,7 @@ static int acx00_lineout_event(struct snd_soc_dapm_widget *w,
+ 	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);//w->codec;
+ 	struct acx00_priv *priv = snd_soc_codec_get_drvdata(codec);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (event) {
+ 	case	SND_SOC_DAPM_POST_PMU:
+ 		if (!priv->enable) {
+@@ -387,8 +396,8 @@ static const struct snd_kcontrol_new right_input_mixer[] = {
+ };
+ 
+ static const struct snd_soc_dapm_widget acx00_codec_dapm_widgets[] = {
+-	SND_SOC_DAPM_AIF_IN_E("DACL", "Playback", 0, AC_DAC_CTL,
+-			OUT_MIXER_DACL_EN, 0,
++	SND_SOC_DAPM_AIF_IN_E("DACL", "Playback", 0,
++			AC_DAC_CTL, OUT_MIXER_DACL_EN, 0,
+ 			acx00_playback_event,
+ 			SND_SOC_DAPM_POST_PMU | SND_SOC_DAPM_POST_PMD),
+ 	SND_SOC_DAPM_AIF_IN_E("DACR", "Playback", 0,
+@@ -602,6 +611,7 @@ static int acx00_codec_hw_params(struct snd_pcm_substream *substream,
+ 	struct snd_soc_codec *codec = dai->codec;
+ 	int i;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (params_format(params)) {
+ 	case SNDRV_PCM_FORMAT_S16_LE:
+ 		snd_soc_update_bits(codec, AC_I2S_FMT0,
+@@ -633,6 +643,12 @@ static int acx00_codec_hw_params(struct snd_pcm_substream *substream,
+ static int acx00_codec_dai_set_sysclk(struct snd_soc_dai *codec_dai,
+ 		int clk_id, unsigned int freq, int dir)
+ {
++	struct snd_soc_codec *codec = codec_dai->codec;
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	snd_soc_update_bits(codec, AC_SYS_CLK_CTL, \
++			(0x1<<SYS_CLK_I2S), (0x1<<SYS_CLK_I2S));
++
+ 	return 0;
+ }
+ 
+@@ -642,6 +658,7 @@ static int acx00_codec_dai_set_fmt(struct snd_soc_dai *codec_dai,
+ 	struct acx00_priv *priv = snd_soc_dai_get_drvdata(codec_dai);
+ 	struct snd_soc_codec *codec = priv->codec;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+ 	/* codec clk & FRM master */
+ 	case SND_SOC_DAIFMT_CBM_CFM:
+@@ -775,13 +792,14 @@ static int acx00_codec_dai_set_clkdiv(struct snd_soc_dai *codec_dai,
+ {
+ 	struct acx00_priv *priv = snd_soc_dai_get_drvdata(codec_dai);
+ 	struct snd_soc_codec *codec = priv->codec;
+-	unsigned int bclk_div;
++	unsigned int bclk_div = 0;
+ 	/*
+ 	 * when PCM mode, setting as 64fs, when I2S mode as 32fs,
+ 	 * then two channel, then just as 64fs
+ 	 */
+ 	unsigned int div_ratio = clk_div / 64;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (div_ratio) {
+ 	case 1:
+ 		bclk_div = I2S_BCLK_DIV_1;
+@@ -842,6 +860,7 @@ static int acx00_codec_dai_set_clkdiv(struct snd_soc_dai *codec_dai,
+ static int acx00_codec_startup(struct snd_pcm_substream *substream,
+ 		struct snd_soc_dai *codec_dai)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	return 0;
+ }
+ 
+@@ -858,6 +877,7 @@ static int acx00_codec_trigger(struct snd_pcm_substream *substream,
+ static int acx00_codec_prepare(struct snd_pcm_substream *substream,
+ 		struct snd_soc_dai *codec_dai)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ 		if (acx00_loop_en)
+ 			snd_soc_update_bits(codec_dai->codec, AC_I2S_FMT0,
+@@ -879,6 +899,7 @@ static int acx00_codec_digital_mute(struct snd_soc_dai *codec_dai,
+ {
+ 	struct snd_soc_codec *codec = codec_dai->codec;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (mute)
+ 		snd_soc_write(codec, AC_I2S_DAC_VOL, 0);
+ 	else
+@@ -891,6 +912,7 @@ static void acx00_codec_shutdown(struct snd_pcm_substream *substream,
+ {
+ 	struct snd_soc_codec *codec = dai->codec;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+ 		acx00_codec_txctrl_enable(codec, 0);
+ 	else
+@@ -984,10 +1006,11 @@ static int acx00_codec_write(struct snd_soc_codec *codec,
+ {
+ 	struct acx00_priv *priv = snd_soc_codec_get_drvdata(codec);
+ 
++	printk("ROY: codec write: %x: %x\n", reg, value);
+ 	return acx00_reg_write(priv->acx00, reg, value);
+ }
+ 
+-static int sunxi_gpio_iodisable(u32 gpio)
++static int sunxi_gpio_io_disable(u32 gpio)
+ {
+ 	/* FIXME: ROY */
+ 	// char pin_name[8];
+@@ -1009,7 +1032,7 @@ static int acx00_codec_suspend(struct snd_soc_codec *codec)
+ 
+ 	/* PA_CTRL first setting low state, then make it iodisabled */
+ 	if (priv->spk_gpio_used) {
+-		sunxi_gpio_iodisable(priv->spk_gpio);
++		sunxi_gpio_io_disable(priv->spk_gpio);
+ 		msleep(30);
+ 	}
+ 
+@@ -1046,8 +1069,8 @@ static int acx00_codec_resume(struct snd_soc_codec *codec)
+ 	schedule_delayed_work(&priv->resume_work, msecs_to_jiffies(300));
+ 
+ 	if (priv->spk_gpio_used) {
+-		gpio_direction_output(priv->spk_gpio, 1);
+-		gpio_set_value(priv->spk_gpio, 0);
++		// gpio_direction_output(priv->spk_gpio, 1);
++		// gpio_set_value(priv->spk_gpio, 0);
+ 	}
+ 
+ 	pr_debug("Exit %s\n", __func__);
+@@ -1105,6 +1128,7 @@ static ssize_t show_audio_reg(struct device *dev,
+ 	int count = 0, i = 0;
+ 	unsigned int reg_val;
+ 
++	count += sprintf(buf, "echo 1/0(W/R) 1/2(D/A) 0xXX{REG} 0xXX{DATA} > audio_reg\n");
+ 	count += sprintf(buf, "dump audio reg:\n");
+ 
+ 	while (reg_labels[i].name != NULL) {
+@@ -1193,7 +1217,7 @@ static struct snd_soc_codec_driver soc_codec_driver_acx00 = {
+ 	{
+ 		.dapm_widgets		= acx00_codec_dapm_widgets,
+ 		.num_dapm_widgets	= ARRAY_SIZE(acx00_codec_dapm_widgets),
+-		.controls		= acx00_codec_controls,
++		.controls			= acx00_codec_controls,
+ 		.num_controls		= ARRAY_SIZE(acx00_codec_controls),
+ 		.dapm_routes		= acx00_codec_dapm_routes,
+ 		.num_dapm_routes	= ARRAY_SIZE(acx00_codec_dapm_routes),
+@@ -1217,6 +1241,7 @@ static int acx00_codec_dev_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, priv);
+ 	priv->acx00 = dev_get_drvdata(pdev->dev.parent);
+ 
++	priv->spk_gpio_used = 1;
+ 	if (np) {
+ 		ret = of_get_named_gpio(np, "gpio-spk", 0);
+ 		if (ret >= 0) {
+@@ -1241,7 +1266,7 @@ static int acx00_codec_dev_probe(struct platform_device *pdev)
+ 				}
+ 			}
+ 		} else {
+-			priv->spk_gpio_used = 0;
++			// priv->spk_gpio_used = 0;
+ 		}
+ 	}
+ 
+@@ -1275,6 +1300,7 @@ static int acx00_codec_dev_remove(struct platform_device *pdev)
+ {
+ 	struct acx00_priv *priv = platform_get_drvdata(pdev);
+ 
++	sysfs_remove_group(&pdev->dev.kobj, &audio_debug_attr_group);
+ #ifndef ACX00_DAPM_LINEOUT
+ 	snd_soc_update_bits(priv->codec, AC_LINEOUT_CTL,
+ 			(1<<LINEOUT_EN), (0<<LINEOUT_EN));
+diff --git a/sound/soc/sunxi/sunxi-sndahub.c b/sound/soc/sunxi/sunxi-sndahub.c
+index d8e72f8e8..de897d4f0 100644
+--- a/sound/soc/sunxi/sunxi-sndahub.c
++++ b/sound/soc/sunxi/sunxi-sndahub.c
+@@ -177,14 +177,15 @@ static int sunxi_ahub_card_init(struct snd_soc_pcm_runtime *rtd)
+ {
+ 	struct snd_soc_codec *codec = rtd->codec;
+ 
++	printk("ROY: %s: %d codec: %s\n", __func__, __LINE__, codec->component.name);
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S0IN");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S0OUT");
+-	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S1IN");
+-	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S1OUT");
++	snd_soc_dapm_enable_pin(snd_soc_codec_get_dapm(codec), "I2S1IN");
++	snd_soc_dapm_enable_pin(snd_soc_codec_get_dapm(codec), "I2S1OUT");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S2IN");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S2OUT");
+-	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S3IN");
+-	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "I2S3OUT");
++	snd_soc_dapm_enable_pin(snd_soc_codec_get_dapm(codec), "I2S3IN");
++	snd_soc_dapm_enable_pin(snd_soc_codec_get_dapm(codec), "I2S3OUT");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "DAM0IN");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "DAM1IN");
+ 	snd_soc_dapm_disable_pin(snd_soc_codec_get_dapm(codec), "DAM0OUT");
+@@ -296,7 +297,7 @@ static struct snd_soc_dai_link sunxi_sndahub_dai_link[] = {
+ 	},
+ 	{
+ 		.name = "Thr",
+-		.stream_name = "Accompany Stream",
++		.stream_name = "Ac Company Stream",
+ 		.codec_dai_name = "sunxi-ahub-aif3",
+ 		.ops = &sunxi_sndahub_ops,
+ 	},
+@@ -320,7 +321,7 @@ static int sunxi_sndahub_dev_probe(struct platform_device *pdev)
+ {
+ 	struct snd_soc_card *card = &snd_soc_sunxi_sndahub;
+ 	struct device_node *np = pdev->dev.of_node;
+-	int ret;
++	int ret = 0;
+ 	int i;
+ 
+ 	card->dev = &pdev->dev;
+@@ -397,7 +398,7 @@ static struct platform_driver sunxi_ahubaudio_driver = {
+ 		.pm = &snd_soc_pm_ops,
+ 	},
+ 	.probe = sunxi_sndahub_dev_probe,
+-	.remove = __exit_p(sunxi_sndahub_dev_remove),
++	.remove = sunxi_sndahub_dev_remove,
+ };
+ 
+ module_platform_driver(sunxi_ahubaudio_driver);
+diff --git a/sound/soc/sunxi/sunxi-snddaudio.c b/sound/soc/sunxi/sunxi-snddaudio.c
+index 95e4dd1a6..9732c4cc0 100644
+--- a/sound/soc/sunxi/sunxi-snddaudio.c
++++ b/sound/soc/sunxi/sunxi-snddaudio.c
+@@ -97,6 +97,12 @@ static int sunxi_snddaudio_hw_params(struct snd_pcm_substream *substream,
+ /* sunxi card initialization */
+ static int sunxi_snddaudio_init(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_soc_codec *codec = rtd->codec;
++
++	printk("\t --- : %s: %d codec: %s\n", __func__, __LINE__, codec->component.name);
++	if(!strncmp("snd-soc-dummy", codec->component.name, strlen("snd-soc-dummy"))) {
++		return 0;
++	}
+ 	return 0;
+ }
+ 
+@@ -120,7 +126,7 @@ static struct snd_soc_card snd_soc_sunxi_snddaudio = {
+ 	.owner          = THIS_MODULE,
+ 	.num_links      = 1,
+ };
+-#if 1//defined(CONFIG_SND_SUNXI_SOC_AHUB) || defined(CONFIG_SND_SUNXI_SOC_AHUB_MODULE)
++#if defined(CONFIG_SND_SUNXI_SOC_AHUB) || defined(CONFIG_SND_SUNXI_SOC_AHUB_MODULE)
+ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -159,7 +165,6 @@ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ 		ret = -EINVAL;
+ 		goto err_kfree_link;
+ 	}
+-	printk("cpu dai of node: %x\n", dai_link->cpu_of_node);
+ 	dai_link->platform_name = "snd-soc-dummy";
+ 
+ 	ret = of_property_read_string(np, "sunxi,snddaudio-codec",
+@@ -205,7 +210,9 @@ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ 	devm_kfree(&pdev->dev, card);
+ 	return ret;
+ }
++#warning ahub-ahub-ahub-ahub-ahub
+ #else
++#warning no-hub machine
+ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -224,8 +231,6 @@ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ 
+ 	card->dev = &pdev->dev;
+ 
+-	card->dev = &pdev->dev;
+-
+ 	dai_link = devm_kzalloc(&pdev->dev,
+ 			sizeof(struct snd_soc_dai_link), GFP_KERNEL);
+ 	if (!dai_link) {
+@@ -310,8 +315,8 @@ static int sunxi_snddaudio_dev_probe(struct platform_device *pdev)
+ static int sunxi_snddaudio_dev_remove(struct platform_device *pdev)
+ {
+ 	struct snd_soc_card *card = platform_get_drvdata(pdev);
+-	devm_kfree(&pdev->dev, card->dai_link);
+ 	snd_soc_unregister_card(card);
++	devm_kfree(&pdev->dev, card->dai_link);
+ 	devm_kfree(&pdev->dev, card);
+ 	return 0;
+ }
+diff --git a/sound/soc/sunxi/sunxi-sndhdmi.c b/sound/soc/sunxi/sunxi-sndhdmi.c
+index c59d94680..928a35201 100644
+--- a/sound/soc/sunxi/sunxi-sndhdmi.c
++++ b/sound/soc/sunxi/sunxi-sndhdmi.c
+@@ -160,7 +160,7 @@ static int sunxi_sndhdmi_dev_probe(struct platform_device *pdev)
+ 
+ 	card->dev = &pdev->dev;
+ 	sunxi_tdmhdmi.hdmi_format = 1;
+-#ifdef CONFIG_SND_SUNXI_SOC_AHUB
++#if defined(CONFIG_SND_SUNXI_SOC_AHUB) || defined(CONFIG_SND_SUNXI_SOC_AHUB_MODULE)
+ 	sunxi_sndhdmi_dai_link.cpu_dai_name = NULL;
+ 	sunxi_sndhdmi_dai_link.cpu_of_node = of_parse_phandle(np,
+ 					"sunxi,cpudai-controller", 0);
+diff --git a/sound/soc/sunxi/sunxi_ahub.c b/sound/soc/sunxi/sunxi_ahub.c
+index 497b219d5..277cb85db 100644
+--- a/sound/soc/sunxi/sunxi_ahub.c
++++ b/sound/soc/sunxi/sunxi_ahub.c
+@@ -835,10 +835,12 @@ static struct snd_soc_codec_driver soc_ahub_dev_sunxi = {
+ 	.suspend = sunxi_ahub_codec_suspend,
+ 	.resume = sunxi_ahub_codec_resume,
+ 	.ignore_pmdown_time = 1,
+-	.component_driver.dapm_widgets = sunxi_ahub_codec_dapm_widgets,
+-	.component_driver.num_dapm_widgets = ARRAY_SIZE(sunxi_ahub_codec_dapm_widgets),
+-	.component_driver.dapm_routes = sunxi_ahub_codec_dapm_routes,
+-	.component_driver.num_dapm_routes = ARRAY_SIZE(sunxi_ahub_codec_dapm_routes),
++	.component_driver = {
++		.dapm_widgets = sunxi_ahub_codec_dapm_widgets,
++		.num_dapm_widgets = ARRAY_SIZE(sunxi_ahub_codec_dapm_widgets),
++		.dapm_routes = sunxi_ahub_codec_dapm_routes,
++		.num_dapm_routes = ARRAY_SIZE(sunxi_ahub_codec_dapm_routes),
++	},
+ };
+ 
+ static int sunxi_ahub_dev_probe(struct platform_device *pdev)
+diff --git a/sound/soc/sunxi/sunxi_ahub_cpudai.c b/sound/soc/sunxi/sunxi_ahub_cpudai.c
+index fb975a7a3..bdd77cc8f 100644
+--- a/sound/soc/sunxi/sunxi_ahub_cpudai.c
++++ b/sound/soc/sunxi/sunxi_ahub_cpudai.c
+@@ -41,9 +41,9 @@ struct sunxi_ahub_cpudai_priv {
+ 	struct sunxi_dma_params capture_dma_param;
+ };
+ 
+-static int startup_playback_cnt;
+-static int startup_capture_cnt;
+-static int karaoke_cnt;
++static int startup_playback_cnt = 0;
++static int startup_capture_cnt = 0;
++static int karaoke_cnt = 0;
+ 
+ int sunxi_ahub_cpudai_init(void)
+ {
+@@ -245,6 +245,7 @@ static int sunxi_ahub_cpudai_startup(struct snd_pcm_substream *substream,
+ 	struct sunxi_ahub_cpudai_priv *sunxi_ahub_cpudai =
+ 					snd_soc_dai_get_drvdata(dai);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+ 		snd_soc_dai_set_dma_data(dai, substream,
+ 					&sunxi_ahub_cpudai->playback_dma_param);
+@@ -260,6 +261,8 @@ static int sunxi_ahub_cpudai_trigger(struct snd_pcm_substream *substream,
+ {
+ 	struct sunxi_ahub_cpudai_priv *sunxi_ahub_cpudai =
+ 					snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (cmd) {
+ 	case	SNDRV_PCM_TRIGGER_START:
+ 	case	SNDRV_PCM_TRIGGER_RESUME:
+diff --git a/sound/soc/sunxi/sunxi_ahub_daudio.c b/sound/soc/sunxi/sunxi_ahub_daudio.c
+index 79dd2d4ea..ab20416e0 100644
+--- a/sound/soc/sunxi/sunxi_ahub_daudio.c
++++ b/sound/soc/sunxi/sunxi_ahub_daudio.c
+@@ -39,6 +39,11 @@
+ 
+ #define DRV_NAME	"sunxi-ahub-daudio"
+ 
++#ifdef pr_debug
++#undef pr_debug
++#define pr_debug printk
++#endif
++
+ struct sunxi_ahub_daudio_priv {
+ 	struct device *dev;
+ 	struct regmap *regmap;
+@@ -46,7 +51,7 @@ struct sunxi_ahub_daudio_priv {
+ 	struct clk *moduleclk;
+ 	struct pinctrl *pinctrl;
+ 	struct pinctrl_state *pinstate;
+-	struct pinctrl_state *pinstate_sleep;
++	// struct pinctrl_state *pinstate_sleep;
+ 	struct snd_soc_dai_driver *cpudai;
+ 	char cpudai_name[20];
+ 	struct mutex mutex;
+@@ -251,7 +256,7 @@ static int sunxi_ahub_daudio_init_fmt(struct sunxi_ahub_daudio_priv
+ 	case	SND_SOC_DAIFMT_I2S:
+ 	case	SND_SOC_DAIFMT_RIGHT_J:
+ 	case	SND_SOC_DAIFMT_LEFT_J:
+-		switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++		switch (fmt & SND_SOC_DAIFMT_CLOCK_MASK) {
+ 		case	SND_SOC_DAIFMT_NB_NF:
+ 			lrck_polarity = 0;
+ 			brck_polarity = 0;
+@@ -270,14 +275,14 @@ static int sunxi_ahub_daudio_init_fmt(struct sunxi_ahub_daudio_priv
+ 			break;
+ 		default:
+ 			dev_err(sunxi_ahub_daudio->dev,
+-					"invert clk setting failed\n");
++					"invert clk setting failed: %x\n", fmt);
+ 			return -EINVAL;
+ 		}
+ 		break;
+ 	case	SND_SOC_DAIFMT_DSP_A:
+ 	case	SND_SOC_DAIFMT_DSP_B:
+ 		/* frame inversion not valid for DSP modes */
+-		switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++		switch (fmt & SND_SOC_DAIFMT_CLOCK_MASK) {
+ 		case SND_SOC_DAIFMT_NB_NF:
+ 			lrck_polarity = 0;
+ 			brck_polarity = 0;
+@@ -310,6 +315,7 @@ static int sunxi_ahub_daudio_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 	struct sunxi_ahub_daudio_priv *sunxi_ahub_daudio =
+ 				snd_soc_dai_get_drvdata(dai);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	sunxi_ahub_daudio_init_fmt(sunxi_ahub_daudio, fmt,
+ 					(sunxi_ahub_daudio->tdm_num));
+ 	return 0;
+@@ -388,14 +394,14 @@ static int sunxi_ahub_daudio_init(
+ 					"pinctrl default state get failed\n");
+ 			return -ENODEV;
+ 		}
+-		sunxi_ahub_daudio->pinstate_sleep =
+-			pinctrl_lookup_state(sunxi_ahub_daudio->pinctrl,
+-					"sleep");
+-		if (IS_ERR_OR_NULL(sunxi_ahub_daudio->pinstate_sleep)) {
+-			dev_err(sunxi_ahub_daudio->dev,
+-					"pinctrl sleep state get failed\n");
+-			return -ENODEV;
+-		}
++		// sunxi_ahub_daudio->pinstate_sleep =
++		// 	pinctrl_lookup_state(sunxi_ahub_daudio->pinctrl,
++		// 			"sleep");
++		// if (IS_ERR_OR_NULL(sunxi_ahub_daudio->pinstate_sleep)) {
++		// 	dev_err(sunxi_ahub_daudio->dev,
++		// 			"pinctrl sleep state get failed\n");
++		// 	return -ENODEV;
++		// }
+ 		ret = pinctrl_select_state(sunxi_ahub_daudio->pinctrl,
+ 						sunxi_ahub_daudio->pinstate);
+ 		if (ret) {
+@@ -416,6 +422,7 @@ static int sunxi_ahub_daudio_hw_params(struct snd_pcm_substream *substream,
+ 	struct sunxi_hdmi_priv *sunxi_hdmi =
+ 				snd_soc_card_get_drvdata(dai->component->card);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	switch (params_format(params)) {
+ 	case	SNDRV_PCM_FORMAT_S16_LE:
+ 		/*
+@@ -586,6 +593,7 @@ static int sunxi_ahub_daudio_set_sysclk(struct snd_soc_dai *dai,
+ 	struct sunxi_ahub_daudio_priv *sunxi_ahub_daudio =
+ 					snd_soc_dai_get_drvdata(dai);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (clk_set_rate(sunxi_ahub_daudio->pllclk, freq)) {
+ 		dev_err(sunxi_ahub_daudio->dev, "set pllclk rate failed\n");
+ 		return -EBUSY;
+@@ -600,6 +608,7 @@ static int sunxi_ahub_daudio_set_clkdiv(struct snd_soc_dai *dai,
+ 					snd_soc_dai_get_drvdata(dai);
+ 	unsigned int bclk_div, div_ratio;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (sunxi_ahub_daudio->tdm_config)
+ 		/* I2S/TDM two channel mode */
+ 		div_ratio = clk_div / (sunxi_ahub_daudio->pcm_lrck_period * 2);
+@@ -668,15 +677,22 @@ static int sunxi_ahub_daudio_set_clkdiv(struct snd_soc_dai *dai,
+ static int sunxi_ahub_daudio_trigger(struct snd_pcm_substream *substream,
+ 				int cmd, struct snd_soc_dai *dai)
+ {
++	struct sunxi_ahub_daudio_priv *sunxi_ahub_daudio =
++					snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY %s: %d, dai: %s, cmd: %d\n", __func__, __LINE__,
++				dai->name, cmd);
+ 	switch (cmd) {
+ 	case	SNDRV_PCM_TRIGGER_START:
+ 	case	SNDRV_PCM_TRIGGER_RESUME:
+ 	case	SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++
+ 		break;
+ 	case	SNDRV_PCM_TRIGGER_STOP:
+ 	case	SNDRV_PCM_TRIGGER_SUSPEND:
+ 	case	SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+ 			/* HMID module, we just keep this clk */
++		
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -687,12 +703,15 @@ static int sunxi_ahub_daudio_trigger(struct snd_pcm_substream *substream,
+ static int sunxi_ahub_daudio_startup(struct snd_pcm_substream *substream,
+ 				struct snd_soc_dai *dai)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++
+ 	return 0;
+ }
+ 
+ static void sunxi_ahub_daudio_shutdown(struct snd_pcm_substream *substream,
+ 				struct snd_soc_dai *dai)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ }
+ 
+ static struct snd_soc_dai_ops sunxi_ahub_cpu_dai_ops = {
+@@ -710,6 +729,7 @@ static int sunxi_ahub_daudio_probe(struct snd_soc_dai *dai)
+ 	struct sunxi_ahub_daudio_priv *sunxi_ahub_daudio =
+ 					snd_soc_dai_get_drvdata(dai);
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	mutex_init(&sunxi_ahub_daudio->mutex);
+ 	sunxi_ahub_daudio_init(sunxi_ahub_daudio, (sunxi_ahub_daudio->tdm_num));
+ 	return 0;
+@@ -717,6 +737,7 @@ static int sunxi_ahub_daudio_probe(struct snd_soc_dai *dai)
+ 
+ static int sunxi_ahub_daudio_remove(struct snd_soc_dai *dai)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	return 0;
+ }
+ 
+@@ -724,7 +745,7 @@ static int sunxi_ahub_daudio_suspend(struct snd_soc_dai *dai)
+ {
+ 	struct sunxi_ahub_daudio_priv *sunxi_ahub_daudio =
+ 					snd_soc_dai_get_drvdata(dai);
+-	int ret;
++	// int ret;
+ 
+ 	pr_debug("Enter %s\n", __func__);
+ 
+@@ -733,13 +754,13 @@ static int sunxi_ahub_daudio_suspend(struct snd_soc_dai *dai)
+ 
+ 
+ 	if (sunxi_ahub_daudio->pinconfig) {
+-		ret = pinctrl_select_state(sunxi_ahub_daudio->pinctrl,
+-				sunxi_ahub_daudio->pinstate_sleep);
+-		if (ret) {
+-			dev_warn(sunxi_ahub_daudio->dev,
+-					"select i2s0-default state failed\n");
+-			return -EBUSY;
+-		}
++		// ret = pinctrl_select_state(sunxi_ahub_daudio->pinctrl,
++		// 		sunxi_ahub_daudio->pinstate_sleep);
++		// if (ret) {
++		// 	dev_warn(sunxi_ahub_daudio->dev,
++		// 			"select i2s0-default state failed\n");
++		// 	return -EBUSY;
++		// }
+ 	}
+ 	/* Global disable I2S/TDM module */
+ 	sunxi_ahub_daudio_global_enable(sunxi_ahub_daudio, 0,
+diff --git a/sound/soc/sunxi/sunxi_daudio.c b/sound/soc/sunxi/sunxi_daudio.c
+new file mode 100644
+index 000000000..f8a7cc6fb
+--- /dev/null
++++ b/sound/soc/sunxi/sunxi_daudio.c
+@@ -0,0 +1,1526 @@
++/* ound\soc\sunxi\sunxi_daudio.c
++ * (C) Copyright 2015-2017
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * wolfgang huang <huangjinhui@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/clk.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_address.h>
++#include <linux/regmap.h>
++#include <linux/dma/sunxi-dma.h>
++#include <linux/pinctrl/consumer.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/initval.h>
++#include <sound/soc.h>
++
++#include "sunxi_daudio.h"
++#include "sunxi_dma.h"
++
++#ifdef pr_debug
++#undef pr_debug
++#define pr_debug printk
++#endif
++
++#define	DRV_NAME	"sunxi_daudio"
++
++#define	SUNXI_DAUDIO_EXTERNAL_TYPE	1
++#define	SUNXI_DAUDIO_TDMHDMI_TYPE	2
++
++struct sunxi_daudio_platform_data {
++	unsigned int daudio_type;
++	unsigned int external_type;
++	unsigned int daudio_master;
++	unsigned int pcm_lrck_period;
++	unsigned int pcm_lrckr_period;
++	unsigned int slot_width_select;
++	unsigned int audio_format;
++	unsigned int signal_inversion;
++	unsigned int frame_type;
++	unsigned int tdm_config;
++	unsigned int tdm_num;
++	unsigned int mclk_div;
++};
++
++struct sunxi_daudio_info {
++	struct device *dev;
++	struct regmap *regmap;
++	struct clk *pllclk;
++	struct clk *moduleclk;
++	struct mutex mutex;
++	struct sunxi_dma_params playback_dma_param;
++	struct sunxi_dma_params capture_dma_param;
++	struct pinctrl *pinctrl;
++	struct pinctrl_state *pinstate;
++	// struct pinctrl_state *pinstate_sleep;
++	struct sunxi_daudio_platform_data *pdata;
++	unsigned int hub_mode;
++	unsigned int hdmi_en;
++};
++
++static bool daudio_loop_en;
++module_param(daudio_loop_en, bool, S_IRUGO | S_IWUSR);
++MODULE_PARM_DESC(daudio_loop_en, "SUNXI Digital audio loopback debug(Y=enable, N=disable)");
++
++/*
++*	Some codec on electric timing need debugging
++*/
++int daudio_set_clk_onoff(struct sunxi_daudio_info *sunxi_daudio, u32 mask, u32 onoff)
++{
++	// struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	switch (mask) {
++	case SUNXI_DAUDIO_BCLK:
++		if (onoff)
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<BCLK_OUT), (1<<BCLK_OUT));
++		else
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<BCLK_OUT), (0<<BCLK_OUT));
++	break;
++	case SUNXI_DAUDIO_LRCK:
++		if (onoff)
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<LRCK_OUT), (1<<LRCK_OUT));
++		else
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<LRCK_OUT), (0<<LRCK_OUT));
++		break;
++	case SUNXI_DAUDIO_MCLK:
++		if (onoff)
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++				(1<<MCLKOUT_EN), (1<<MCLKOUT_EN));
++		else
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++				(1<<MCLKOUT_EN), (0<<MCLKOUT_EN));
++		break;
++	case SUNXI_DAUDIO_GEN:
++		if (onoff)
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<GLOBAL_EN), (1<<GLOBAL_EN));
++		else
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<GLOBAL_EN), (0<<GLOBAL_EN));
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static struct snd_soc_dai *sunxi_daudio_get_dai_by_id(struct snd_soc_card *card,
++                                               int id)
++{
++       struct snd_soc_pcm_runtime *rtd;
++
++       list_for_each_entry(rtd, &card->rtd_list, list) {
++               if (rtd->codec_dai && (rtd->codec_dai->id == id))
++                       return rtd->codec_dai;
++       }
++
++       pr_err("%s: dai: %d, not found\n", __func__, id);
++       return NULL;
++}
++
++static int daudio_hub_enable(struct sunxi_daudio_info *sunxi_daudio, int enable)
++{
++	printk("ROY: %s: sunxi-daudio: %p\n", __func__, sunxi_daudio);
++	switch (enable) {
++	case	0:
++	case	1:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<HUB_EN), (0<<HUB_EN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (0<<CTL_TXEN));
++		/* fixup clk debug */
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_BCLK, 1);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_LRCK, 1);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_MCLK, 1);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_GEN, 1);
++		break;
++	case	2:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<HUB_EN), (1<<HUB_EN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (1<<CTL_TXEN));
++
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_BCLK, 0);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_LRCK, 0);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_MCLK, 0);
++		daudio_set_clk_onoff(sunxi_daudio, SUNXI_DAUDIO_GEN, 0);
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int sunxi_daudio_get_hub_mode(struct snd_kcontrol *kcontrol,
++			struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_card *card = snd_kcontrol_chip(kcontrol);
++	struct snd_soc_dai *dai;
++	struct sunxi_daudio_info *sunxi_daudio;
++	unsigned int reg_val;
++
++	BUG_ON(!card);
++
++	dai = sunxi_daudio_get_dai_by_id(card, 0);
++	if(!dai) {
++		return 0;
++	}
++
++	printk("%s: card: %s, dai: %s\n", __func__, card->name, dai->name);
++
++	sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	BUG_ON(!sunxi_daudio);
++	printk("%s: sunxi-daudio: %p\n", __func__, sunxi_daudio);
++
++	regmap_read(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL, &reg_val);
++
++	ucontrol->value.integer.value[0] = ((reg_val & (1<<HUB_EN)) ? 2 : 1);
++	return 0;
++}
++
++static int sunxi_daudio_set_hub_mode(struct snd_kcontrol *kcontrol,
++			struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_card *card = snd_kcontrol_chip(kcontrol);
++	struct snd_soc_dai *dai;
++	struct sunxi_daudio_info *sunxi_daudio;
++
++	BUG_ON(!card);
++
++	dai = sunxi_daudio_get_dai_by_id(card, 0);
++	if(!dai) {
++		return 0;
++	}
++
++	printk("%s: card: %s, dai: %s\n", __func__, card->name, dai->name);
++
++ 	sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	BUG_ON(!sunxi_daudio);
++
++	return daudio_hub_enable(sunxi_daudio, ucontrol->value.integer.value[0]);
++}
++
++static const char *daudio_format_function[] = {"nil", "disable", "enable"};
++static const struct soc_enum daudio_format_enum = 
++		SOC_ENUM_SINGLE_EXT(3, daudio_format_function);
++
++/* dts pcm Audio Mode Select */
++static const struct snd_kcontrol_new sunxi_daudio_controls[] = {
++	SOC_ENUM_EXT("sunxi ahub mode", daudio_format_enum,
++		sunxi_daudio_get_hub_mode, sunxi_daudio_set_hub_mode),
++};
++
++static void sunxi_daudio_txctrl_enable(struct sunxi_daudio_info *sunxi_daudio,
++					int enable)
++{
++	pr_debug("Enter %s, enable %d\n", __func__, enable);
++	if (enable) {
++		/* HDMI audio Transmit Clock just enable at startup */
++		if (sunxi_daudio->pdata->daudio_type
++			!= SUNXI_DAUDIO_TDMHDMI_TYPE)
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_CTL,
++					(1<<CTL_TXEN), (1<<CTL_TXEN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
++					(1<<TXDRQEN), (1<<TXDRQEN));
++	} else {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
++					(1<<TXDRQEN), (0<<TXDRQEN));
++		if (sunxi_daudio->pdata->daudio_type
++			!= SUNXI_DAUDIO_TDMHDMI_TYPE)
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_CTL,
++					(1<<CTL_TXEN), (0<<CTL_TXEN));
++	}
++	pr_debug("End %s, enable %d\n", __func__, enable);
++}
++
++static void sunxi_daudio_rxctrl_enable(struct sunxi_daudio_info *sunxi_daudio,
++					int enable)
++{
++	if (enable) {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_RXEN), (1<<CTL_RXEN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
++				(1<<RXDRQEN), (1<<RXDRQEN));
++	} else {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_INTCTL,
++				(1<<RXDRQEN), (0<<RXDRQEN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_RXEN), (0<<CTL_RXEN));
++	}
++}
++
++static int sunxi_daudio_global_enable(struct sunxi_daudio_info *sunxi_daudio,
++					int enable)
++{
++	if (enable) {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<SDO0_EN), (1<<SDO0_EN));
++		if (sunxi_daudio->hdmi_en) {
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO1_EN), (1<<SDO1_EN));
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO2_EN), (1<<SDO2_EN));
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO3_EN), (1<<SDO3_EN));
++		}
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<GLOBAL_EN), (1<<GLOBAL_EN));
++	} else {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<GLOBAL_EN), (0<<GLOBAL_EN));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<SDO0_EN), (0<<SDO0_EN));
++		if (sunxi_daudio->hdmi_en) {
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO1_EN), (0<<SDO1_EN));
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO2_EN), (0<<SDO2_EN));
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++					(1<<SDO3_EN), (0<<SDO3_EN));
++		}
++	}
++	return 0;
++}
++
++static int sunxi_daudio_mclk_setting(struct sunxi_daudio_info *sunxi_daudio)
++{
++	unsigned int mclk_div;
++
++	if (sunxi_daudio->pdata->mclk_div) {
++		switch (sunxi_daudio->pdata->mclk_div) {
++		case	1:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_1;
++			break;
++		case	2:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_2;
++			break;
++		case	4:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_3;
++			break;
++		case	6:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_4;
++			break;
++		case	8:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_5;
++			break;
++		case	12:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_6;
++			break;
++		case	16:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_7;
++			break;
++		case	24:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_8;
++			break;
++		case	32:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_9;
++			break;
++		case	48:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_10;
++			break;
++		case	64:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_11;
++			break;
++		case	96:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_12;
++			break;
++		case	128:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_13;
++			break;
++		case	176:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_14;
++			break;
++		case	192:
++			mclk_div = SUNXI_DAUDIO_MCLK_DIV_15;
++			break;
++		default:
++			dev_err(sunxi_daudio->dev, "unsupport  mclk_div\n");
++			return -EINVAL;
++		}
++		/* setting Mclk as external codec input clk */
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++			(SUNXI_DAUDIO_MCLK_DIV_MASK<<MCLK_DIV),
++			(mclk_div<<MCLK_DIV));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++				(1<<MCLKOUT_EN), (1<<MCLKOUT_EN));
++	} else {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++				(1<<MCLKOUT_EN), (0<<MCLKOUT_EN));
++	}
++	return 0;
++}
++
++static int sunxi_daudio_init_fmt(struct sunxi_daudio_info *sunxi_daudio,
++				unsigned int fmt)
++{
++	unsigned int offset, mode;
++	unsigned int lrck_polarity, brck_polarity;
++
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case	SND_SOC_DAIFMT_CBM_CFM:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(SUNXI_DAUDIO_LRCK_OUT_MASK<<LRCK_OUT),
++				(SUNXI_DAUDIO_LRCK_OUT_DISABLE<<LRCK_OUT));
++		break;
++	case	SND_SOC_DAIFMT_CBS_CFS:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(SUNXI_DAUDIO_LRCK_OUT_MASK<<LRCK_OUT),
++				(SUNXI_DAUDIO_LRCK_OUT_ENABLE<<LRCK_OUT));
++		break;
++	default:
++		dev_err(sunxi_daudio->dev, "unknown maser/slave format\n");
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case	SND_SOC_DAIFMT_I2S:
++		offset = SUNXI_DAUDIO_TX_OFFSET_1;
++		mode = SUNXI_DAUDIO_MODE_CTL_I2S;
++		break;
++	case	SND_SOC_DAIFMT_RIGHT_J:
++		offset = SUNXI_DAUDIO_TX_OFFSET_0;
++		mode = SUNXI_DAUDIO_MODE_CTL_RIGHT;
++		break;
++	case	SND_SOC_DAIFMT_LEFT_J:
++		offset = SUNXI_DAUDIO_TX_OFFSET_0;
++		mode = SUNXI_DAUDIO_MODE_CTL_LEFT;
++		break;
++	case	SND_SOC_DAIFMT_DSP_A:
++		offset = SUNXI_DAUDIO_TX_OFFSET_1;
++		mode = SUNXI_DAUDIO_MODE_CTL_PCM;
++		break;
++	case	SND_SOC_DAIFMT_DSP_B:
++		offset = SUNXI_DAUDIO_TX_OFFSET_0;
++		mode = SUNXI_DAUDIO_MODE_CTL_PCM;
++		break;
++	default:
++		dev_err(sunxi_daudio->dev, "format setting failed\n");
++		return -EINVAL;
++	}
++
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++			(SUNXI_DAUDIO_MODE_CTL_MASK<<MODE_SEL),
++			(mode<<MODE_SEL));
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHSEL,
++			(SUNXI_DAUDIO_TX_OFFSET_MASK<<TX_OFFSET),
++			(offset<<TX_OFFSET));
++	if (sunxi_daudio->hdmi_en) {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX1CHSEL,
++			(SUNXI_DAUDIO_TX_OFFSET_MASK<<TX_OFFSET),
++			(offset<<TX_OFFSET));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX2CHSEL,
++			(SUNXI_DAUDIO_TX_OFFSET_MASK<<TX_OFFSET),
++			(offset<<TX_OFFSET));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX3CHSEL,
++			(SUNXI_DAUDIO_TX_OFFSET_MASK<<TX_OFFSET),
++			(offset<<TX_OFFSET));
++	}
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCHSEL,
++			(SUNXI_DAUDIO_RX_OFFSET_MASK<<RX_OFFSET),
++			(offset<<RX_OFFSET));
++
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_DSP_A:
++	case SND_SOC_DAIFMT_DSP_B:
++		/* frame inversion not valid for DSP modes */
++		switch (fmt & SND_SOC_DAIFMT_CLOCK_MASK) {
++		case SND_SOC_DAIFMT_NB_NF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_NOR;
++			/* BCLK_Nor for DSP_A mode */
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_NOR;
++			break;
++		case SND_SOC_DAIFMT_IB_NF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_NOR;
++			/* BCLK_Inv for DSP_B mode */
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_INV;
++			break;
++		default:
++			dev_err(sunxi_daudio->dev, "frame inv not valid for DSP modes\n");
++			return -EINVAL;
++		}
++		break;
++	case SND_SOC_DAIFMT_I2S:
++	case SND_SOC_DAIFMT_RIGHT_J:
++	case SND_SOC_DAIFMT_LEFT_J:
++		switch (fmt & SND_SOC_DAIFMT_CLOCK_MASK) {
++		case SND_SOC_DAIFMT_NB_NF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_NOR;
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_NOR;
++			break;
++		case SND_SOC_DAIFMT_NB_IF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_INV;
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_NOR;
++			break;
++		case SND_SOC_DAIFMT_IB_NF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_NOR;
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_INV;
++			break;
++		case SND_SOC_DAIFMT_IB_IF:
++			lrck_polarity = SUNXI_DAUDIO_LRCK_POLARITY_INV;
++			brck_polarity = SUNXI_DAUDIO_BCLK_POLARITY_INV;
++			break;
++		default:
++			dev_err(sunxi_daudio->dev, "dai fmt inv invalid: %x\n", fmt);
++			WARN_ON(1);
++			return -EINVAL;
++		}
++		break;
++	default:
++		dev_err(sunxi_daudio->dev, "dai fmt invalid: %x\n", fmt);
++		return -EINVAL;
++	}
++
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++			(1<<LRCK_POLARITY), (lrck_polarity<<LRCK_POLARITY));
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++			(1<<BRCK_POLARITY), (brck_polarity<<BRCK_POLARITY));
++	return 0;
++}
++
++static int sunxi_daudio_init(struct sunxi_daudio_info *sunxi_daudio)
++{
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++			(1<<LRCK_WIDTH),
++			(sunxi_daudio->pdata->frame_type<<LRCK_WIDTH));
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++			(SUNXI_DAUDIO_LRCK_PERIOD_MASK)<<LRCK_PERIOD,
++			((sunxi_daudio->pdata->pcm_lrck_period-1)<<LRCK_PERIOD));
++
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++			(SUNXI_DAUDIO_SLOT_WIDTH_MASK<<SLOT_WIDTH),
++			(((sunxi_daudio->pdata->slot_width_select>>2) - 1)<<SLOT_WIDTH));
++
++	/*
++	 * MSB on the transmit format, always be first.
++	 * default using Linear-PCM, without no companding.
++	 * A-law<Eourpean standard> or U-law<US-Japan> not working ok.
++	 */
++	regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT1, SUNXI_DAUDIO_FMT1_DEF);
++
++	sunxi_daudio_init_fmt(sunxi_daudio, (sunxi_daudio->pdata->audio_format
++		| (sunxi_daudio->pdata->signal_inversion<<SND_SOC_DAIFMT_SIG_SHIFT)
++		| (sunxi_daudio->pdata->daudio_master<<SND_SOC_DAIFMT_MASTER_SHIFT)));
++
++	return sunxi_daudio_mclk_setting(sunxi_daudio);
++}
++
++static int sunxi_daudio_hw_params(struct snd_pcm_substream *substream,
++		struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	// ROY: maybe BUG here
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_card *card = rtd->card;
++	struct sunxi_hdmi_priv *sunxi_hdmi = snd_soc_card_get_drvdata(card);
++#ifdef	SUNXI_DAUDIO_HDMI
++	unsigned int reg_val;
++#endif
++
++	printk("ROY: %s: %d, dai: %s, card: %s\n", __func__, __LINE__,
++				dai->name, card->name);
++	switch (params_format(params)) {
++	case	SNDRV_PCM_FORMAT_S16_LE:
++		/*
++		 * Special procesing for hdmi, HDMI card name is
++		 * "sndhdmi" or sndhdmiraw. if card not HDMI,
++		 * strstr func just return NULL, jump to right section.
++		 * Not HDMI card, sunxi_hdmi maybe a NULL pointer.
++		 */
++		if (sunxi_daudio->pdata->daudio_type
++			== SUNXI_DAUDIO_TDMHDMI_TYPE
++			&& (sunxi_hdmi->hdmi_format > 1)) {
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++				(SUNXI_DAUDIO_SR_MASK<<SAMPLE_RESOLUTION),
++				(SUNXI_DAUDIO_SR_24BIT<<SAMPLE_RESOLUTION));
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_TXIM_MASK<<TXIM),
++					(SUNXI_DAUDIO_TXIM_VALID_MSB<<TXIM));
++		} 
++		else 
++		{
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++				(SUNXI_DAUDIO_SR_MASK<<SAMPLE_RESOLUTION),
++				(SUNXI_DAUDIO_SR_16BIT<<SAMPLE_RESOLUTION));
++			if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++				regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_TXIM_MASK<<TXIM),
++					(SUNXI_DAUDIO_TXIM_VALID_LSB<<TXIM));
++			else
++				regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_RXOM_MASK<<RXOM),
++					(SUNXI_DAUDIO_RXOM_EXPH<<RXOM));
++		}
++		break;
++	case	SNDRV_PCM_FORMAT_S20_3LE:
++	case	SNDRV_PCM_FORMAT_S24_LE:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++				(SUNXI_DAUDIO_SR_MASK<<SAMPLE_RESOLUTION),
++				(SUNXI_DAUDIO_SR_24BIT<<SAMPLE_RESOLUTION));
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_TXIM_MASK<<TXIM),
++					(SUNXI_DAUDIO_TXIM_VALID_LSB<<TXIM));
++		else
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_RXOM_MASK<<RXOM),
++					(SUNXI_DAUDIO_RXOM_EXPH<<RXOM));
++		break;
++	case	SNDRV_PCM_FORMAT_S32_LE:
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FMT0,
++				(SUNXI_DAUDIO_SR_MASK<<SAMPLE_RESOLUTION),
++				(SUNXI_DAUDIO_SR_32BIT<<SAMPLE_RESOLUTION));
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_TXIM_MASK<<TXIM),
++					(SUNXI_DAUDIO_TXIM_VALID_LSB<<TXIM));
++		else
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_FIFOCTL,
++					(SUNXI_DAUDIO_RXOM_MASK<<RXOM),
++					(SUNXI_DAUDIO_RXOM_EXPH<<RXOM));
++		break;
++	default:
++		dev_err(sunxi_daudio->dev, "unrecognized format\n");
++		return -EINVAL;
++	}
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CHCFG,
++				(SUNXI_DAUDIO_TX_SLOT_MASK<<TX_SLOT_NUM),
++				((params_channels(params)-1)<<TX_SLOT_NUM));
++		if (sunxi_daudio->hdmi_en == 0) {
++#ifdef SUNXI_DAUDIO_MODE_B
++			regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHMAP0, SUNXI_DEFAULT_CHMAP1);
++			regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHMAP1, SUNXI_DEFAULT_CHMAP0);
++#else
++			regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHMAP0, SUNXI_DEFAULT_CHMAP0);
++#endif
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHSEL,
++					(SUNXI_DAUDIO_TX_CHSEL_MASK<<TX_CHSEL),
++					((params_channels(params)-1)<<TX_CHSEL));
++			regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_TX0CHSEL,
++					(SUNXI_DAUDIO_TX_CHEN_MASK<<TX_CHEN),
++					((1<<params_channels(params))-1)<<TX_CHEN);
++		} else {
++#ifdef SUNXI_DAUDIO_HDMI
++#ifdef SUNXI_DAUDIO_MODE_B
++			regmap_write(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX0CHMAP1, 0x10);
++			if (sunxi_hdmi->hdmi_format > 1) {
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX1CHMAP1, 0x32);
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX2CHMAP1, 0x54);
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX3CHMAP1, 0x76);
++			} 
++			else 
++			{
++				if (params_channels(params) > 2)
++					regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX1CHMAP1, 0x23);
++				if (params_channels(params) > 4) {
++					if (params_channels(params) == 6)
++						regmap_write(
++							sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX2CHMAP1,
++							0x54);
++					else
++						regmap_write(
++							sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX2CHMAP1,
++							0x76);
++				}
++				if (params_channels(params) > 6)
++					regmap_write(sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX3CHMAP1,
++							0x54);
++			}
++#else
++			regmap_write(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX0CHMAP0, 0x10);
++			if (sunxi_hdmi->hdmi_format > 1) {
++				/* support for HBR */
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX1CHMAP0, 0x32);
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX2CHMAP0, 0x54);
++				regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX3CHMAP0, 0x76);
++			} else {
++				/* LPCM 5.1 & 7.1 support */
++				if (params_channels(params) > 2)
++					regmap_write(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_TX1CHMAP0, 0x23);
++				if (params_channels(params) > 4) {
++					if (params_channels(params) == 6)
++						regmap_write(
++							sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX2CHMAP0,
++							0x54);
++					else
++						regmap_write(
++							sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX2CHMAP0,
++							0x76);
++				}
++				if (params_channels(params) > 6)
++					regmap_write(sunxi_daudio->regmap,
++							SUNXI_DAUDIO_TX3CHMAP0,
++							0x54);
++			}
++#endif	/* MODE_B */
++
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX0CHSEL,
++					0x01 << TX_CHSEL, 0x01 << TX_CHSEL);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX0CHSEL,
++					0x03 << TX_CHEN, 0x03 << TX_CHEN);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX1CHSEL,
++					0x01 << TX_CHSEL, 0x01 << TX_CHSEL);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX1CHSEL,
++					(0x03)<<TX_CHEN, 0x03 << TX_CHEN);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX2CHSEL,
++					0x01 << TX_CHSEL, 0x01 << TX_CHSEL);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX2CHSEL,
++					(0x03)<<TX_CHEN, 0x03 << TX_CHEN);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX3CHSEL,
++					0x01 << TX_CHSEL, 0x01 << TX_CHSEL);
++			regmap_update_bits(sunxi_daudio->regmap,
++					SUNXI_DAUDIO_TX3CHSEL,
++					(0x03)<<TX_CHEN, 0x03 << TX_CHEN);
++#endif	/* HDMI */
++		}
++	} else {
++#ifdef SUNXI_DAUDIO_MODE_B
++		regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCHMAP0,
++				SUNXI_DEFAULT_CHMAP1);
++		regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCHMAP1,
++				SUNXI_DEFAULT_CHMAP0);
++#else
++		regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCHMAP,
++				SUNXI_DEFAULT_CHMAP);
++#endif
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CHCFG,
++				(SUNXI_DAUDIO_RX_SLOT_MASK<<RX_SLOT_NUM),
++				((params_channels(params)-1)<<RX_SLOT_NUM));
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCHSEL,
++				(SUNXI_DAUDIO_RX_CHSEL_MASK<<RX_CHSEL),
++				((params_channels(params)-1)<<RX_CHSEL));
++	}
++#ifdef	SUNXI_DAUDIO_HDMI
++	/* Special processing for HDMI hub playback to enable hdmi module */
++	if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE) 
++	{
++		mutex_lock(&sunxi_daudio->mutex);
++		regmap_read(sunxi_daudio->regmap,
++				SUNXI_DAUDIO_FIFOCTL, &reg_val);
++		sunxi_daudio->hub_mode = (reg_val & (1<<HUB_EN));
++		if (sunxi_daudio->hub_mode) {
++			sndhdmi_hw_params(substream, params, NULL);
++			sndhdmi_prepare(substream, NULL);
++		}
++		mutex_unlock(&sunxi_daudio->mutex);
++	}
++#endif
++	daudio_hub_enable(sunxi_daudio, 1);
++
++	return 0;
++}
++
++static int sunxi_daudio_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	sunxi_daudio_init_fmt(sunxi_daudio, fmt);
++	return 0;
++}
++
++static int sunxi_daudio_set_sysclk(struct snd_soc_dai *dai,
++			int clk_id, unsigned int freq, int dir)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	if (clk_set_rate(sunxi_daudio->pllclk, freq)) {
++		dev_err(sunxi_daudio->dev, "set pllclk rate failed\n");
++		return -EBUSY;
++	}
++	return 0;
++}
++
++static int sunxi_daudio_set_clkdiv(struct snd_soc_dai *dai,
++				int clk_id, int clk_div)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	unsigned int bclk_div, div_ratio;
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	if (sunxi_daudio->pdata->tdm_config)
++		/* I2S/TDM two channel mode */
++		div_ratio =
++			clk_div / (2 * sunxi_daudio->pdata->slot_width_select);
++	else
++		/* PCM mode */
++		div_ratio = clk_div / sunxi_daudio->pdata->pcm_lrck_period;
++
++	switch (div_ratio) {
++	case	1:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_1;
++		break;
++	case	2:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_2;
++		break;
++	case	4:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_3;
++		break;
++	case	6:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_4;
++		break;
++	case	8:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_5;
++		break;
++	case	12:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_6;
++		break;
++	case	16:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_7;
++		break;
++	case	24:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_8;
++		break;
++	case	32:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_9;
++		break;
++	case	48:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_10;
++		break;
++	case	64:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_11;
++		break;
++	case	96:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_12;
++		break;
++	case	128:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_13;
++		break;
++	case	176:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_14;
++		break;
++	case	192:
++		bclk_div = SUNXI_DAUDIO_BCLK_DIV_15;
++		break;
++	default:
++		dev_err(sunxi_daudio->dev, "unsupport clk_div\n");
++		return -EINVAL;
++	}
++
++	/* setting bclk to driver external codec bit clk */
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CLKDIV,
++			(SUNXI_DAUDIO_BCLK_DIV_MASK<<BCLK_DIV),
++			(bclk_div<<BCLK_DIV));
++	return 0;
++}
++
++static int sunxi_daudio_dai_startup(struct snd_pcm_substream *substream,
++				struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	/* FIXME: As HDMI module to play audio, it need at least 1100ms to sync.
++	 * if we not wait we lost audio data to playback, or we wait for 1100ms
++	 * to playback, user experience worst than you can imagine. So we need
++	 * to cutdown that sync time by keeping clock signal on. we just enable
++	 * it at startup and resume, cutdown it at remove and suspend time.
++	 */
++	// if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE)
++	{
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (1<<CTL_TXEN));
++	}
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		snd_soc_dai_set_dma_data(dai, substream,
++					&sunxi_daudio->playback_dma_param);
++	else
++		snd_soc_dai_set_dma_data(dai, substream,
++					&sunxi_daudio->capture_dma_param);
++
++	return 0;
++}
++
++static int sunxi_daudio_trigger(struct snd_pcm_substream *substream,
++				int cmd, struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	switch (cmd) {
++	case	SNDRV_PCM_TRIGGER_START:
++	case	SNDRV_PCM_TRIGGER_RESUME:
++	case	SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			if (daudio_loop_en)
++				regmap_update_bits(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_CTL,
++						(1<<LOOP_EN), (1<<LOOP_EN));
++			else
++				regmap_update_bits(sunxi_daudio->regmap,
++						SUNXI_DAUDIO_CTL,
++						(1<<LOOP_EN), (0<<LOOP_EN));
++			sunxi_daudio_txctrl_enable(sunxi_daudio, 1);
++		} else {
++			sunxi_daudio_rxctrl_enable(sunxi_daudio, 1);
++		}
++		break;
++	case	SNDRV_PCM_TRIGGER_STOP:
++	case	SNDRV_PCM_TRIGGER_SUSPEND:
++	case	SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			sunxi_daudio_txctrl_enable(sunxi_daudio, 0);
++		else
++			sunxi_daudio_rxctrl_enable(sunxi_daudio, 0);
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int sunxi_daudio_prepare(struct snd_pcm_substream *substream,
++				struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	/*as you need to clean up TX or RX FIFO , need to turn off GEN bit*/
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++			(1 << GLOBAL_EN), (0 << GLOBAL_EN));
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<FIFO_CTL_FTX), (1<<FIFO_CTL_FTX));
++		regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_TXCNT, 0);
++	} else {
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_FIFOCTL,
++				(1<<FIFO_CTL_FRX), (1<<FIFO_CTL_FRX));
++		regmap_write(sunxi_daudio->regmap, SUNXI_DAUDIO_RXCNT, 0);
++	}
++
++	regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++			(1 << GLOBAL_EN), (1 << GLOBAL_EN));
++	return 0;
++}
++
++static int sunxi_daudio_probe(struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	int ret = 0;
++
++	printk("ROY: %s: %d dinfo: %p, dai: %p,%s\n", __func__, __LINE__,
++				sunxi_daudio, dai, dai->name);
++	mutex_init(&sunxi_daudio->mutex);
++
++	printk("\t--- compname:%s, card: %p,%s\n",
++				dai->component->name,
++				dai->component->card, dai->component->card->name);
++#if 1
++	ret = snd_soc_add_component_controls(dai->component, sunxi_daudio_controls, 1);
++	// ret = snd_soc_add_card_controls(dai->component->card, sunxi_daudio_controls, 1);
++	if (ret)
++		dev_warn(sunxi_daudio->dev, "Failed to register hub mode control, will continue without it.\n");
++#endif
++	sunxi_daudio_init(sunxi_daudio);
++	return 0;
++}
++
++static void sunxi_daudio_shutdown(struct snd_pcm_substream *substream,
++				struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	/* Special processing for HDMI hub playback to shutdown hdmi module */
++	if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE) 
++	{
++		mutex_lock(&sunxi_daudio->mutex);
++		if (sunxi_daudio->hub_mode)
++			sndhdmi_shutdown(substream, NULL);
++		mutex_unlock(&sunxi_daudio->mutex);
++	}
++}
++
++static int sunxi_daudio_remove(struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	// if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE)
++	{
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (0<<CTL_TXEN));
++	}
++	return 0;
++}
++
++static int sunxi_daudio_suspend(struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	// int ret = 0;
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	pr_debug("[daudio] suspend .%s\n", dev_name(sunxi_daudio->dev));
++
++	/* Global disable I2S/TDM module */
++	sunxi_daudio_global_enable(sunxi_daudio, 0);
++
++	// if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE)
++	{
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (0<<CTL_TXEN));
++	}
++
++	clk_disable_unprepare(sunxi_daudio->moduleclk);
++	clk_disable_unprepare(sunxi_daudio->pllclk);
++
++	if (sunxi_daudio->pdata->external_type) {
++		/*
++		ret = pinctrl_select_state(sunxi_daudio->pinctrl,
++				sunxi_daudio->pinstate_sleep);
++		if (ret) {
++			pr_warn("[daudio]select pin sleep state failed\n");
++			return ret;
++		}
++		*/
++		devm_pinctrl_put(sunxi_daudio->pinctrl);
++	}
++
++	return 0;
++}
++
++static int sunxi_daudio_resume(struct snd_soc_dai *dai)
++{
++	struct sunxi_daudio_info *sunxi_daudio = snd_soc_dai_get_drvdata(dai);
++	int ret;
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	pr_debug("[daudio] resume .%s\n", dev_name(sunxi_daudio->dev));
++
++	if (clk_prepare_enable(sunxi_daudio->pllclk)) {
++		dev_err(sunxi_daudio->dev, "pllclk resume failed\n");
++		ret = -EBUSY;
++		goto err_resume_out;
++	}
++
++	if (clk_prepare_enable(sunxi_daudio->moduleclk)) {
++		dev_err(sunxi_daudio->dev, "moduleclk resume failed\n");
++		ret = -EBUSY;
++		goto err_pllclk_disable;
++	}
++
++	if (sunxi_daudio->pdata->external_type) {
++		sunxi_daudio->pinctrl = devm_pinctrl_get(sunxi_daudio->dev);
++		if (IS_ERR_OR_NULL(sunxi_daudio)) {
++			dev_err(sunxi_daudio->dev, "pinctrl resume get failed\n");
++			ret = -ENOMEM;
++			goto err_moduleclk_disable;
++		}
++
++		sunxi_daudio->pinstate = pinctrl_lookup_state(sunxi_daudio->pinctrl,
++							PINCTRL_STATE_DEFAULT);
++		if (IS_ERR_OR_NULL(sunxi_daudio->pinstate)) {
++			dev_err(sunxi_daudio->dev, "pinctrl default state get failed\n");
++			ret = -EINVAL;
++			goto err_pinctrl_put;
++		}
++
++		/*
++		sunxi_daudio->pinstate_sleep = pinctrl_lookup_state(sunxi_daudio->pinctrl,
++							PINCTRL_STATE_SLEEP);
++		if (IS_ERR_OR_NULL(sunxi_daudio->pinstate_sleep)) {
++			dev_err(sunxi_daudio->dev, "pinctrl sleep state get failed\n");
++			ret = -EINVAL;
++			goto err_pinctrl_put;
++		}
++		*/
++
++		ret = pinctrl_select_state(sunxi_daudio->pinctrl, sunxi_daudio->pinstate);
++		if (ret)
++			dev_warn(sunxi_daudio->dev,
++				"digital audio set pinctrl default state failed\n");
++	}
++
++	sunxi_daudio_init(sunxi_daudio);
++
++	/* Global enable I2S/TDM module */
++	sunxi_daudio_global_enable(sunxi_daudio, 1);
++
++	if (sunxi_daudio->pdata->daudio_type == SUNXI_DAUDIO_TDMHDMI_TYPE)
++	{
++		regmap_update_bits(sunxi_daudio->regmap, SUNXI_DAUDIO_CTL,
++				(1<<CTL_TXEN), (1<<CTL_TXEN));
++	}
++
++	return 0;
++
++err_pinctrl_put:
++	devm_pinctrl_put(sunxi_daudio->pinctrl);
++err_moduleclk_disable:
++	clk_disable_unprepare(sunxi_daudio->moduleclk);
++err_pllclk_disable:
++	clk_disable_unprepare(sunxi_daudio->pllclk);
++err_resume_out:
++	return ret;
++}
++
++#define	SUNXI_DAUDIO_RATES	(SNDRV_PCM_RATE_8000_192000 \
++				| SNDRV_PCM_RATE_KNOT)
++
++static struct snd_soc_dai_ops sunxi_daudio_dai_ops = {
++	.hw_params = sunxi_daudio_hw_params,
++	.set_sysclk = sunxi_daudio_set_sysclk,
++	.set_clkdiv = sunxi_daudio_set_clkdiv,
++	.set_fmt = sunxi_daudio_set_fmt,
++	.startup = sunxi_daudio_dai_startup,
++	.trigger = sunxi_daudio_trigger,
++	.prepare = sunxi_daudio_prepare,
++	.shutdown = sunxi_daudio_shutdown,
++};
++
++static struct snd_soc_dai_driver sunxi_daudio_dai = {
++	.probe = sunxi_daudio_probe,
++	.suspend = sunxi_daudio_suspend,
++	.resume = sunxi_daudio_resume,
++	.remove = sunxi_daudio_remove,
++	.playback = {
++		.channels_min = 1,
++		.channels_max = 8,
++		.rates = SUNXI_DAUDIO_RATES,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE
++			| SNDRV_PCM_FMTBIT_S20_3LE
++			| SNDRV_PCM_FMTBIT_S24_LE
++			| SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.capture = {
++		.channels_min = 1,
++		.channels_max = 8,
++		.rates = SUNXI_DAUDIO_RATES,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE
++			| SNDRV_PCM_FMTBIT_S20_3LE
++			| SNDRV_PCM_FMTBIT_S24_LE
++			| SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.ops = &sunxi_daudio_dai_ops,
++};
++
++static const struct snd_soc_component_driver sunxi_daudio_component = {
++	.name = DRV_NAME,
++};
++
++static struct sunxi_daudio_platform_data sunxi_daudio = {
++	.daudio_type = SUNXI_DAUDIO_EXTERNAL_TYPE,
++	.external_type = 1,
++};
++
++static struct sunxi_daudio_platform_data sunxi_tdmhdmi = {
++	.daudio_type = SUNXI_DAUDIO_TDMHDMI_TYPE,
++	.external_type = 0,
++	.audio_format = 1,
++	.signal_inversion = 1,
++	.daudio_master = 4,
++	.pcm_lrck_period = 32,
++	.pcm_lrckr_period = 1,
++	.slot_width_select = 32,
++	.tdm_config = 1,
++	.mclk_div = 0,
++};
++
++static const struct of_device_id sunxi_daudio_of_match[] = {
++	{
++		.compatible = "allwinner,sunxi-daudio",
++		.data = &sunxi_daudio,
++	},
++	{
++		.compatible = "allwinner,sunxi-tdmhdmi",
++		.data = &sunxi_tdmhdmi,
++	},
++	{},
++};
++MODULE_DEVICE_TABLE(of, sunxi_daudio_of_match);
++
++static const struct regmap_config sunxi_daudio_regmap_config = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.max_register = SUNXI_DAUDIO_DEBUG,
++	.cache_type = REGCACHE_NONE,
++};
++
++static int sunxi_daudio_dev_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	const struct of_device_id *match;
++	void __iomem *membase;
++	struct sunxi_daudio_info *sunxi_daudio;
++	struct device_node *np = pdev->dev.of_node;
++	unsigned int temp_val;
++	int ret = 0;
++
++	match = of_match_device(sunxi_daudio_of_match, &pdev->dev);
++	if (match) {
++		sunxi_daudio = devm_kzalloc(&pdev->dev,
++					sizeof(struct sunxi_daudio_info),
++					GFP_KERNEL);
++		if (!sunxi_daudio) {
++			dev_err(&pdev->dev, "alloc sunxi_daudio failed\n");
++			ret = -ENOMEM;
++			goto err_node_put;
++		}
++		dev_set_drvdata(&pdev->dev, sunxi_daudio);
++		sunxi_daudio->dev = &pdev->dev;
++
++		sunxi_daudio->pdata = devm_kzalloc(&pdev->dev,
++				sizeof(struct sunxi_daudio_platform_data),
++				GFP_KERNEL);
++		if (!sunxi_daudio->pdata) {
++			dev_err(&pdev->dev, "alloc sunxi daudio platform data failed\n");
++			ret = -ENOMEM;
++			goto err_devm_kfree;
++		}
++
++		memcpy(sunxi_daudio->pdata, match->data,
++			sizeof(struct sunxi_daudio_platform_data));
++	} else {
++		dev_err(&pdev->dev, "node match failed\n");
++		return -EINVAL;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if(!res) {
++		dev_err(&pdev->dev, "Failed to get io resource\n");
++		goto err_devm_kfree;
++	}
++	membase = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(membase)) {
++		dev_err(&pdev->dev, "Failed to map the registers\n");
++		goto err_devm_kfree;
++	}
++
++	sunxi_daudio->regmap = devm_regmap_init_mmio(&pdev->dev,
++					membase,
++					&sunxi_daudio_regmap_config);
++	if (IS_ERR(sunxi_daudio->regmap)) {
++		dev_err(&pdev->dev, "regmap init failed\n");
++		ret = PTR_ERR(sunxi_daudio->regmap);
++		goto err_iounmap;
++	}
++
++	printk("ROY: %s-%s, info_addr: %p, regmap: %p\n", __func__, pdev->name, sunxi_daudio, sunxi_daudio->regmap);
++
++	sunxi_daudio->pllclk = of_clk_get(np, 0);
++	if (IS_ERR_OR_NULL(sunxi_daudio->pllclk)) {
++		dev_err(&pdev->dev, "pllclk get failed\n");
++		ret = PTR_ERR(sunxi_daudio->pllclk);
++		goto err_iounmap;
++	}
++
++	sunxi_daudio->moduleclk = of_clk_get(np, 1);
++	if (IS_ERR_OR_NULL(sunxi_daudio->moduleclk)) {
++		dev_err(&pdev->dev, "moduleclk get failed\n");
++		ret = PTR_ERR(sunxi_daudio->moduleclk);
++		goto err_pllclk_put;
++	}
++
++	// if (clk_set_parent(sunxi_daudio->moduleclk, sunxi_daudio->pllclk)) {
++	// 	dev_err(&pdev->dev, "set parent of moduleclk to pllclk failed\n");
++	// 	ret = -EBUSY;
++	// 	goto err_moduleclk_put;
++	// }
++
++	if(clk_prepare_enable(sunxi_daudio->pllclk) ||
++			clk_prepare_enable(sunxi_daudio->moduleclk)) {
++		dev_err(&pdev->dev, "set enable of moduleclk and pllclk failed\n");
++		ret = -EBUSY;
++		goto err_moduleclk_put;
++	}
++
++	if (sunxi_daudio->pdata->external_type) {
++		sunxi_daudio->pinctrl = devm_pinctrl_get(&pdev->dev);
++		if (IS_ERR_OR_NULL(sunxi_daudio->pinctrl)) {
++			dev_err(&pdev->dev, "pinctrl get failed\n");
++			ret = -EINVAL;
++			goto err_moduleclk_put;
++		}
++
++		sunxi_daudio->pinstate = pinctrl_lookup_state(sunxi_daudio->pinctrl, PINCTRL_STATE_DEFAULT);
++		if (IS_ERR_OR_NULL(sunxi_daudio->pinstate)) {
++			dev_err(&pdev->dev, "pinctrl default state get failed\n");
++			ret = -EINVAL;
++			goto err_pinctrl_put;
++		}
++
++		/*
++		sunxi_daudio->pinstate_sleep = pinctrl_lookup_state(sunxi_daudio->pinctrl, PINCTRL_STATE_SLEEP);
++		if (IS_ERR_OR_NULL(sunxi_daudio->pinstate_sleep)) {
++			dev_err(&pdev->dev, "pinctrl sleep state get failed\n");
++			ret = -EINVAL;
++			goto err_pinctrl_put;
++		}
++		*/
++	}
++
++	switch (sunxi_daudio->pdata->daudio_type) {
++	case	SUNXI_DAUDIO_EXTERNAL_TYPE:
++		ret = of_property_read_u32(np, "tdm_num", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "tdm configuration missing or invalid\n");
++			/*
++			 * warnning just continue,
++			 * making tdm_num as default setting
++			 */
++			sunxi_daudio->pdata->tdm_num = 0;
++		} else {
++			sunxi_daudio->pdata->tdm_num = temp_val;
++		}
++
++		switch (sunxi_daudio->pdata->tdm_num) {
++		case 0:
++			sunxi_daudio->playback_dma_param.dma_drq_type_num =
++						DRQDST_DAUDIO_0_TX;
++			sunxi_daudio->capture_dma_param.dma_drq_type_num =
++						DRQSRC_DAUDIO_0_RX;
++			break;
++		case 1:
++			sunxi_daudio->playback_dma_param.dma_drq_type_num =
++						DRQDST_DAUDIO_1_TX;
++			sunxi_daudio->capture_dma_param.dma_drq_type_num =
++						DRQSRC_DAUDIO_1_RX;
++			break;
++#if defined(SUNXI_DAUDIO_NUM_THREE)
++		case 2:
++			sunxi_daudio->playback_dma_param.dma_drq_type_num =
++						DRQDST_DAUDIO_2_TX;
++			break;
++
++#if defined(SUNXI_DAUDIO_NUM_FOUR)
++		case 3:
++			sunxi_daudio->playback_dma_param.dma_drq_type_num =
++						DRQDST_DAUDIO_3_TX;
++			sunxi_daudio->capture_dma_param.dma_drq_type_num =
++						DRQSRC_DAUDIO_3_RX;
++			break;
++#endif	/* SUNXI_DAUDIO_NUM_FOUR */
++#endif	/* SUNXI_DAUDIO_NUM_THREE */
++		default:
++			dev_err(sunxi_daudio->dev, "tdm num may be setting invalid\n");
++			ret = EINVAL;
++			goto err_pinctrl_put;
++		}
++
++		sunxi_daudio->playback_dma_param.dma_addr =
++					res->start + SUNXI_DAUDIO_TXFIFO;
++		sunxi_daudio->capture_dma_param.dma_addr =
++					res->start + SUNXI_DAUDIO_RXFIFO;
++
++		sunxi_daudio->playback_dma_param.src_maxburst = 4;
++		sunxi_daudio->playback_dma_param.dst_maxburst = 4;
++		sunxi_daudio->capture_dma_param.src_maxburst = 4;
++		sunxi_daudio->capture_dma_param.dst_maxburst = 4;
++
++		ret = of_property_read_u32(np, "daudio_master", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "daudio_master configuration missing or invalid\n");
++			/*
++			 * default setting SND_SOC_DAIFMT_CBS_CFS mode
++			 * codec clk & FRM slave
++			 */
++			sunxi_daudio->pdata->daudio_master = 4;
++		} else {
++			sunxi_daudio->pdata->daudio_master = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "pcm_lrck_period", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "pcm_lrck_period configuration missing or invalid\n");
++			sunxi_daudio->pdata->pcm_lrck_period = 0;
++		} else {
++			sunxi_daudio->pdata->pcm_lrck_period = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "slot_width_select", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "slot_width_select configuration missing or invalid\n");
++			sunxi_daudio->pdata->slot_width_select = 0;
++		} else {
++			sunxi_daudio->pdata->slot_width_select = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "audio_format", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "audio_format configuration missing or invalid\n");
++			sunxi_daudio->pdata->audio_format = 1;
++		} else {
++			sunxi_daudio->pdata->audio_format = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "signal_inversion", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "signal_inversion configuration missing or invalid\n");
++			sunxi_daudio->pdata->signal_inversion = 1;
++		} else {
++			sunxi_daudio->pdata->signal_inversion = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "frametype", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "frametype configuration missing or invalid\n");
++			sunxi_daudio->pdata->frame_type = 0;
++		} else {
++			sunxi_daudio->pdata->frame_type = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "tdm_config", &temp_val);
++		if (ret < 0) {
++			dev_warn(&pdev->dev, "tdm_config configuration missing or invalid\n");
++			sunxi_daudio->pdata->tdm_config = 1;
++		} else {
++			sunxi_daudio->pdata->tdm_config = temp_val;
++		}
++
++		ret = of_property_read_u32(np, "mclk_div", &temp_val);
++		if (ret < 0)
++			sunxi_daudio->pdata->mclk_div = 0;
++		else
++			sunxi_daudio->pdata->mclk_div = temp_val;
++
++		break;
++	case	SUNXI_DAUDIO_TDMHDMI_TYPE:
++#ifdef	SUNXI_DAUDIO_HDMI
++		sunxi_daudio->playback_dma_param.dma_addr =
++				res->start + SUNXI_DAUDIO_TXFIFO;
++		sunxi_daudio->playback_dma_param.dma_drq_type_num =
++					DRQDST_DAUDIO_HDMI_TX;
++		sunxi_daudio->playback_dma_param.src_maxburst = 8;
++		sunxi_daudio->playback_dma_param.dst_maxburst = 8;
++		sunxi_daudio->hdmi_en = 1;
++#endif
++		break;
++	default:
++		dev_err(&pdev->dev, "missing digital audio type\n");
++		ret = -EINVAL;
++		goto err_devm_kfree;
++	}
++
++	ret = snd_soc_register_component(&pdev->dev, &sunxi_daudio_component,
++					&sunxi_daudio_dai, 1);
++	if (ret) {
++		dev_err(&pdev->dev, "component register failed\n");
++		ret = -ENOMEM;
++		goto err_pinctrl_put;
++	}
++
++	switch (sunxi_daudio->pdata->daudio_type) {
++	case	SUNXI_DAUDIO_EXTERNAL_TYPE:
++		ret = asoc_dma_platform_register(&pdev->dev, 0);
++		if (ret) {
++			dev_err(&pdev->dev, "register ASoC platform failed\n");
++			ret = -ENOMEM;
++			goto err_unregister_component;
++		}
++		break;
++	case	SUNXI_DAUDIO_TDMHDMI_TYPE:
++		ret = asoc_dma_platform_register(&pdev->dev,
++					SND_DMAENGINE_PCM_FLAG_NO_RESIDUE);
++		if (ret) {
++			dev_err(&pdev->dev, "register ASoC platform failed\n");
++			ret = -ENOMEM;
++			goto err_unregister_component;
++		}
++		break;
++	default:
++		dev_err(&pdev->dev, "missing digital audio type\n");
++		ret = -EINVAL;
++		goto err_unregister_component;
++	}
++
++	sunxi_daudio_global_enable(sunxi_daudio, 1);
++
++	return 0;
++
++err_unregister_component:
++	snd_soc_unregister_component(&pdev->dev);
++err_pinctrl_put:
++	devm_pinctrl_put(sunxi_daudio->pinctrl);
++err_moduleclk_put:
++	clk_put(sunxi_daudio->moduleclk);
++err_pllclk_put:
++	clk_put(sunxi_daudio->pllclk);
++err_iounmap:
++	iounmap(membase);
++err_devm_kfree:
++	devm_kfree(&pdev->dev, sunxi_daudio);
++err_node_put:
++	of_node_put(np);
++	return ret;
++}
++
++static int __exit sunxi_daudio_dev_remove(struct platform_device *pdev)
++{
++	struct sunxi_daudio_info *sunxi_daudio = dev_get_drvdata(&pdev->dev);
++
++	snd_soc_unregister_component(&pdev->dev);
++	clk_put(sunxi_daudio->moduleclk);
++	clk_put(sunxi_daudio->pllclk);
++	devm_kfree(&pdev->dev, sunxi_daudio);
++	return 0;
++}
++
++static struct platform_driver sunxi_daudio_driver = {
++	.probe = sunxi_daudio_dev_probe,
++	.remove = __exit_p(sunxi_daudio_dev_remove),
++	.driver = {
++		.name = DRV_NAME,
++		.owner = THIS_MODULE,
++		.of_match_table = sunxi_daudio_of_match,
++	},
++};
++
++module_platform_driver(sunxi_daudio_driver);
++
++MODULE_AUTHOR("wolfgang huang <huangjinhui@allwinnertech.com>");
++MODULE_DESCRIPTION("SUNXI DAI AUDIO ASoC Interface");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:sunxi-daudio");
+diff --git a/sound/soc/sunxi/sunxi_daudio.h b/sound/soc/sunxi/sunxi_daudio.h
+new file mode 100644
+index 000000000..5b42468b9
+--- /dev/null
++++ b/sound/soc/sunxi/sunxi_daudio.h
+@@ -0,0 +1,332 @@
++/*
++ * sound\soc\sunxi\sunxi_daudio.h
++ * (C) Copyright 2014-2016
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ * wolfgang huang <huangjinhui@allwinertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
++#ifndef	__SUNXI_DAUDIO_H_
++#define	__SUNXI_DAUDIO_H_
++
++/*
++ *             I2S(0..)        HDMI_NUM         MODE
++ * sun8iw10	  2		 none		 B
++ * sun8iw11	  3		  2		 A
++ * sun8iw17	  3		 none		 B
++ * sun50iw1	  3		  2		 A
++ * sun50iw2	  3		  2		 A
++ * sun50iw3	  3		 none		 B
++ * sun50iw6	  4		  1		 B
++ */
++
++/* DAUDIO chans diff config, Mode A support 8 chans, Mode B support 16 chans */
++#define SUNXI_DAUDIO_MODE_B
++
++/* HDMI Daudio Module define */
++#define SUNXI_DAUDIO_HDMI
++
++/* I2S group max number define */
++#define SUNXI_DAUDIO_NUM_TWO
++#define SUNXI_DAUDIO_NUM_THREE
++#define SUNXI_DAUDIO_NUM_FOUR
++
++/* hdmi daudio num define */
++#if defined(SUNXI_DAUDIO_HDMI)
++#define DRQDST_DAUDIO_HDMI_TX	DRQDST_DAUDIO_1_TX
++#endif	/* SUNXI_DAUDIO_HDMI */
++
++/* DAUDIO register definition */
++#define	SUNXI_DAUDIO_CTL	0x00
++#define	SUNXI_DAUDIO_FMT0	0x04
++#define	SUNXI_DAUDIO_FMT1	0x08
++#define	SUNXI_DAUDIO_INTSTA	0x0C
++#define	SUNXI_DAUDIO_RXFIFO	0x10
++#define	SUNXI_DAUDIO_FIFOCTL	0x14
++#define	SUNXI_DAUDIO_FIFOSTA	0x18
++#define	SUNXI_DAUDIO_INTCTL	0x1C
++#define	SUNXI_DAUDIO_TXFIFO	0x20
++#define	SUNXI_DAUDIO_CLKDIV	0x24
++#define	SUNXI_DAUDIO_TXCNT	0x28
++#define	SUNXI_DAUDIO_RXCNT	0x2C
++#define	SUNXI_DAUDIO_CHCFG	0x30
++#define	SUNXI_DAUDIO_TX0CHSEL	0x34
++#define	SUNXI_DAUDIO_TX1CHSEL	0x38
++#define	SUNXI_DAUDIO_TX2CHSEL	0x3C
++#define	SUNXI_DAUDIO_TX3CHSEL	0x40
++
++#if	defined(SUNXI_DAUDIO_MODE_B)
++#define	SUNXI_DAUDIO_TX0CHMAP0	0x44
++#define	SUNXI_DAUDIO_TX0CHMAP1	0x48
++#define	SUNXI_DAUDIO_TX1CHMAP0	0x4C
++#define	SUNXI_DAUDIO_TX1CHMAP1	0x50
++#define	SUNXI_DAUDIO_TX2CHMAP0	0x54
++#define	SUNXI_DAUDIO_TX2CHMAP1	0x58
++#define	SUNXI_DAUDIO_TX3CHMAP0	0x5C
++#define	SUNXI_DAUDIO_TX3CHMAP1	0x60
++#define	SUNXI_DAUDIO_RXCHSEL	0x64
++#define	SUNXI_DAUDIO_RXCHMAP0	0x68
++#define	SUNXI_DAUDIO_RXCHMAP1	0x6C
++#define	SUNXI_DAUDIO_DEBUG		0x70
++#else
++#define	SUNXI_DAUDIO_TX0CHMAP0	0x44
++#define	SUNXI_DAUDIO_TX1CHMAP0	0x48
++#define	SUNXI_DAUDIO_TX2CHMAP0	0x4C
++#define	SUNXI_DAUDIO_TX3CHMAP0	0x50
++#define	SUNXI_DAUDIO_RXCHSEL	0x54
++#define	SUNXI_DAUDIO_RXCHMAP	0x58
++#define	SUNXI_DAUDIO_DEBUG	0x5C
++#endif
++
++/* SUNXI_DAUDIO_CTL:0x00 */
++#define	BCLK_OUT		18
++#define	LRCK_OUT		17
++#define	LRCKR_CTL		16
++#define	SDO3_EN			11
++#define	SDO2_EN			10
++#define	SDO1_EN			9
++#define	SDO0_EN			8
++#define	MUTE_CTL		6
++#define	MODE_SEL		4
++#define	LOOP_EN			3
++#define	CTL_TXEN		2
++#define	CTL_RXEN		1
++#define	GLOBAL_EN		0
++
++/* SUNXI_DAUDIO_FMT0:0x04 */
++#define	SDI_SYNC_SEL		31
++#define	LRCK_WIDTH		30
++#define	LRCKR_PERIOD		20
++#define	LRCK_POLARITY		19
++#define	LRCK_PERIOD		8
++#define	BRCK_POLARITY		7
++#define	SAMPLE_RESOLUTION	4
++#define	EDGE_TRANSFER		3
++#define	SLOT_WIDTH		0
++
++/* SUNXI_DAUDIO_FMT1:0x08 */
++#define	RX_MLS			7
++#define	TX_MLS			6
++#define	SEXT			4
++#define	RX_PDM			2
++#define	TX_PDM			0
++
++/* SUNXI_DAUDIO_INTSTA:0x0C */
++#define	TXU_INT			6
++#define	TXO_INT			5
++#define	TXE_INT			4
++#define	RXU_INT			2
++#define RXO_INT			1
++#define	RXA_INT			0
++
++/* SUNXI_DAUDIO_FIFOCTL:0x14 */
++#define	HUB_EN			31
++#define	FIFO_CTL_FTX		25
++#define	FIFO_CTL_FRX		24
++#define	TXTL			12
++#define	RXTL			4
++#define	TXIM			2
++#define	RXOM			0
++
++/* SUNXI_DAUDIO_FIFOSTA:0x18 */
++#define	FIFO_TXE		28
++#define	FIFO_TX_CNT		16
++#define	FIFO_RXA		8
++#define	FIFO_RX_CNT		0
++
++/* SUNXI_DAUDIO_INTCTL:0x1C */
++#define	TXDRQEN			7
++#define	TXUI_EN			6
++#define	TXOI_EN			5
++#define	TXEI_EN			4
++#define	RXDRQEN			3
++#define	RXUIEN			2
++#define	RXOIEN			1
++#define	RXAIEN			0
++
++/* SUNXI_DAUDIO_CLKDIV:0x24 */
++#define	MCLKOUT_EN		8
++#define	BCLK_DIV		4
++#define	MCLK_DIV		0
++
++/* SUNXI_DAUDIO_CHCFG:0x30 */
++#define	TX_SLOT_HIZ		9
++#define	TX_STATE		8
++#define	RX_SLOT_NUM		4
++#define	TX_SLOT_NUM		0
++
++/* SUNXI_DAUDIO_TXnCHSEL:0X34+n*0x04 */
++#if	defined(SUNXI_DAUDIO_MODE_B)
++#define	TX_OFFSET		20
++#define	TX_CHSEL		16
++#define	TX_CHEN			0
++#else
++#define	TX_OFFSET		12
++#define	TX_CHEN			4
++#define	TX_CHSEL		0
++#endif
++
++/* SUNXI_DAUDIO_RXCHSEL */
++#if	defined(SUNXI_DAUDIO_MODE_B)
++#define	RX_OFFSET		20
++#define	RX_CHSEL		16
++#else
++#define	RX_OFFSET		12
++#define	RX_CHSEL		0
++#endif
++
++/* sun8iw10 CHMAP default setting */
++#define	SUNXI_DEFAULT_CHMAP0	0x76543210
++#define	SUNXI_DEFAULT_CHMAP1	0xFEDCBA98
++
++/* RXCHMAP default setting */
++#define	SUNXI_DEFAULT_CHMAP	0x76543210
++
++/* Shift & Mask define */
++
++/* SUNXI_DAUDIO_CTL:0x00 */
++#define	SUNXI_DAUDIO_MODE_CTL_MASK		3
++#define	SUNXI_DAUDIO_MODE_CTL_PCM		0
++#define	SUNXI_DAUDIO_MODE_CTL_I2S		1
++#define	SUNXI_DAUDIO_MODE_CTL_LEFT		1
++#define	SUNXI_DAUDIO_MODE_CTL_RIGHT		2
++#define	SUNXI_DAUDIO_MODE_CTL_REVD		3
++/* combine LRCK_CLK & BCLK setting */
++#define	SUNXI_DAUDIO_LRCK_OUT_MASK		3
++#define	SUNXI_DAUDIO_LRCK_OUT_DISABLE	0
++#define	SUNXI_DAUDIO_LRCK_OUT_ENABLE	3
++
++/* SUNXI_DAUDIO_FMT0 */
++#define	SUNXI_DAUDIO_LRCK_PERIOD_MASK	0x3FF
++#define	SUNXI_DAUDIO_SLOT_WIDTH_MASK	7
++/* Left Blank */
++#define	SUNXI_DAUDIO_SR_MASK			7
++#define	SUNXI_DAUDIO_SR_16BIT			3
++#define	SUNXI_DAUDIO_SR_24BIT			5
++#define	SUNXI_DAUDIO_SR_32BIT			7
++
++#define	SUNXI_DAUDIO_LRCK_POLARITY_NOR	0
++#define	SUNXI_DAUDIO_LRCK_POLARITY_INV	1
++#define	SUNXI_DAUDIO_BCLK_POLARITY_NOR	0
++#define	SUNXI_DAUDIO_BCLK_POLARITY_INV	1
++
++/* SUNXI_DAUDIO_FMT1 */
++#define	SUNXI_DAUDIO_FMT1_DEF			0x30
++
++/* SUNXI_DAUDIO_FIFOCTL */
++#define	SUNXI_DAUDIO_TXIM_MASK			1
++#define	SUNXI_DAUDIO_TXIM_VALID_MSB		0
++#define	SUNXI_DAUDIO_TXIM_VALID_LSB		1
++/* Left Blank */
++#define	SUNXI_DAUDIO_RXOM_MASK			3
++/* Expanding 0 at LSB of RX_FIFO */
++#define	SUNXI_DAUDIO_RXOM_EXP0			0
++/* Expanding sample bit at MSB of RX_FIFO */
++#define	SUNXI_DAUDIO_RXOM_EXPH			1
++/* Fill RX_FIFO low word be 0 */
++#define	SUNXI_DAUDIO_RXOM_TUNL			2
++/* Fill RX_FIFO high word be higher sample bit */
++#define	SUNXI_DAUDIO_RXOM_TUNH			3
++
++/* SUNXI_DAUDIO_CLKDIV */
++#define	SUNXI_DAUDIO_BCLK_DIV_MASK		0xF
++#define	SUNXI_DAUDIO_BCLK_DIV_1			1
++#define	SUNXI_DAUDIO_BCLK_DIV_2			2
++#define	SUNXI_DAUDIO_BCLK_DIV_3			3
++#define	SUNXI_DAUDIO_BCLK_DIV_4			4
++#define	SUNXI_DAUDIO_BCLK_DIV_5			5
++#define	SUNXI_DAUDIO_BCLK_DIV_6			6
++#define	SUNXI_DAUDIO_BCLK_DIV_7			7
++#define	SUNXI_DAUDIO_BCLK_DIV_8			8
++#define	SUNXI_DAUDIO_BCLK_DIV_9			9
++#define	SUNXI_DAUDIO_BCLK_DIV_10		10
++#define	SUNXI_DAUDIO_BCLK_DIV_11		11
++#define	SUNXI_DAUDIO_BCLK_DIV_12		12
++#define	SUNXI_DAUDIO_BCLK_DIV_13		13
++#define	SUNXI_DAUDIO_BCLK_DIV_14		14
++#define	SUNXI_DAUDIO_BCLK_DIV_15		15
++/* Left Blank */
++#define	SUNXI_DAUDIO_MCLK_DIV_MASK		0xF
++#define	SUNXI_DAUDIO_MCLK_DIV_1			1
++#define	SUNXI_DAUDIO_MCLK_DIV_2			2
++#define	SUNXI_DAUDIO_MCLK_DIV_3			3
++#define	SUNXI_DAUDIO_MCLK_DIV_4			4
++#define	SUNXI_DAUDIO_MCLK_DIV_5			5
++#define	SUNXI_DAUDIO_MCLK_DIV_6			6
++#define	SUNXI_DAUDIO_MCLK_DIV_7			7
++#define	SUNXI_DAUDIO_MCLK_DIV_8			8
++#define	SUNXI_DAUDIO_MCLK_DIV_9			9
++#define	SUNXI_DAUDIO_MCLK_DIV_10		10
++#define	SUNXI_DAUDIO_MCLK_DIV_11		11
++#define	SUNXI_DAUDIO_MCLK_DIV_12		12
++#define	SUNXI_DAUDIO_MCLK_DIV_13		13
++#define	SUNXI_DAUDIO_MCLK_DIV_14		14
++#define	SUNXI_DAUDIO_MCLK_DIV_15		15
++
++/* SUNXI_DAUDIO_CHCFG */
++#define	SUNXI_DAUDIO_TX_SLOT_MASK		7
++#define	SUNXI_DAUDIO_RX_SLOT_MASK		7
++
++/* SUNXI_DAUDIO_TX0CHSEL: */
++#define	SUNXI_DAUDIO_TX_OFFSET_MASK		3
++#define	SUNXI_DAUDIO_TX_OFFSET_0		0
++#define	SUNXI_DAUDIO_TX_OFFSET_1		1
++/* Left Blank */
++#define	SUNXI_DAUDIO_TX_CHEN_MASK		0xFF
++#define	SUNXI_DAUDIO_TX_CHSEL_MASK		7
++
++/* SUNXI_DAUDIO_RXCHSEL */
++#ifndef	SUNXI_DAUDIO_MODE_B
++#define SUNXI_DAUDIO_RX_OFFSET_MASK		1
++#define SUNXI_DAUDIO_RX_CHSEL_MASK		0xF
++#else
++#define SUNXI_DAUDIO_RX_OFFSET_MASK		3
++#define SUNXI_DAUDIO_RX_CHSEL_MASK		7
++#endif
++
++#define	SND_SOC_DAIFMT_SIG_SHIFT		8
++#define	SND_SOC_DAIFMT_MASTER_SHIFT		12
++
++#define SUNXI_DAUDIO_BCLK			0
++#define SUNXI_DAUDIO_LRCK			1
++#define SUNXI_DAUDIO_MCLK			2
++#define SUNXI_DAUDIO_GEN 			3
++
++// int daudio_set_clk_onoff(struct snd_soc_dai *dai, u32 mask, u32 onoff);
++#ifndef	CONFIG_SND_SUNXI_SOC_HDMIAUDIO
++static inline int sndhdmi_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	return 0;
++}
++
++static inline int sndhdmi_prepare(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai)
++{
++	return 0;
++}
++
++static inline void sndhdmi_shutdown(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai)
++{
++	return;
++}
++
++#else	/* !CONFIG_SND_SUNXI_SOC_HDMIAUDIO */
++extern int sndhdmi_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai);
++extern void sndhdmi_shutdown(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai);
++extern int sndhdmi_prepare(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai);
++#endif	/* CONFIG_SND_SUNXI_SOC_HDMIAUDIO */
++
++#endif	/* __SUNXI_DAUDIO_H_ */
+diff --git a/sound/soc/sunxi/sunxi_dma.c b/sound/soc/sunxi/sunxi_dma.c
+index 8e6f9ca61..b2b6fa5eb 100644
+--- a/sound/soc/sunxi/sunxi_dma.c
++++ b/sound/soc/sunxi/sunxi_dma.c
+@@ -203,6 +203,12 @@ static int sunxi_pcm_hw_params(struct snd_pcm_substream *substream,
+ 	struct dma_slave_config slave_config;
+ 	int ret;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
++	if(!chan) {
++		dev_err(dev, "hw snd dmaeangine cpm get chan failed.\n");
++		return -EINVAL;
++	}
++
+ 	dmap = snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
+ 
+ 	ret = snd_hwparams_to_dma_slave_config(substream, params, &slave_config);
+@@ -275,7 +281,7 @@ static int sunxi_pcm_hdmi_hw_params(struct snd_pcm_substream *substream,
+ 	if (raw_flag > 1) {
+ 		slave_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 		slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-#ifndef CONFIG_SND_SUNXI_SOC_AHUB
++#if !defined(CONFIG_SND_SUNXI_SOC_AHUB) && !defined(CONFIG_SND_SUNXI_SOC_AHUB_MODULE)
+ 		strcpy(substream->pcm->card->id, "sndhdmiraw");
+ #endif
+ 		if (!dev->dma_mask)
+@@ -291,7 +297,7 @@ static int sunxi_pcm_hdmi_hw_params(struct snd_pcm_substream *substream,
+ 		hdmipcm_dma_addr = substream->dma_buffer.addr;
+ 		substream->dma_buffer.addr = (dma_addr_t)hdmiraw_dma_addr;
+ 	} else {
+-#ifndef CONFIG_SND_SUNXI_SOC_AHUB
++#if !defined(CONFIG_SND_SUNXI_SOC_AHUB) && !defined(CONFIG_SND_SUNXI_SOC_AHUB_MODULE)
+ 		strcpy(substream->pcm->card->id, "sndhdmi");
+ #endif
+ 	}
+@@ -323,6 +329,7 @@ static int sunxi_pcm_hdmi_hw_free(struct snd_pcm_substream *substream)
+ }
+ static int sunxi_pcm_hw_free(struct snd_pcm_substream *substream)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	snd_pcm_set_runtime_buffer(substream, NULL);
+ 
+ 	return 0;
+@@ -330,6 +337,7 @@ static int sunxi_pcm_hw_free(struct snd_pcm_substream *substream)
+ 
+ static int sunxi_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ {
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ 		switch (cmd) {
+ 		case SNDRV_PCM_TRIGGER_START:
+@@ -365,6 +373,8 @@ static int sunxi_pcm_open(struct snd_pcm_substream *substream)
+ 	int ret = 0;
+ 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+ 	struct device *dev = rtd->platform->dev;
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	/* Set HW params now that initialization is complete */
+ 	snd_soc_set_runtime_hwparams(substream, &sunxi_pcm_hardware);
+ 	ret = snd_pcm_hw_constraint_integer(substream->runtime,
+@@ -375,6 +385,7 @@ static int sunxi_pcm_open(struct snd_pcm_substream *substream)
+ 				NULL);
+ 	if (ret) {
+ 		dev_err(dev, "dmaengine pcm open failed with err %d\n", ret);
++		return -EINVAL;
+ 	}
+ 
+ 	return 0;
+@@ -384,6 +395,8 @@ static int sunxi_pcm_mmap(struct snd_pcm_substream *substream,
+ 	struct vm_area_struct *vma)
+ {
+ 	struct snd_pcm_runtime *runtime = NULL;
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->runtime!=NULL) {
+ 		runtime = substream->runtime;
+ 
+@@ -402,6 +415,8 @@ static int sunxi_pcm_copy(struct snd_pcm_substream *substream, int a,
+ {
+ 	int ret = 0;
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
++
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ 		char *hwbuf = runtime->dma_area + frames_to_bytes(runtime, hwoff);
+ 		if (copy_from_user(hwbuf, buf, frames_to_bytes(runtime, frames))) {
+@@ -471,6 +486,7 @@ static void sunxi_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 	struct snd_dma_buffer *buf;
+ 	int stream;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	for (stream = 0; stream < 2; stream++) {
+ 		substream = pcm->streams[stream].substream;
+ 		if (!substream)
+@@ -493,6 +509,7 @@ static int sunxi_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ 	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 
++	printk("ROY: %s: %d\n", __func__, __LINE__);
+ 	if (!card->dev->dma_mask)
+ 		card->dev->dma_mask = &sunxi_pcm_mask;
+ 	if (!card->dev->coherent_dma_mask)
+diff --git a/sound/soc/sunxi/sndhdmi.c b/sound/soc/sunxi/sunxi_hdmi.c
+similarity index 88%
+rename from sound/soc/sunxi/sndhdmi.c
+rename to sound/soc/sunxi/sunxi_hdmi.c
+index 661f1315c..eec00a3f6 100644
+--- a/sound/soc/sunxi/sndhdmi.c
++++ b/sound/soc/sunxi/sunxi_hdmi.c
+@@ -132,32 +132,6 @@ static int sndhdmi_set_dai_fmt(struct snd_soc_dai *codec_dai,
+ int sndhdmi_prepare(struct snd_pcm_substream *substream,
+ 	struct snd_soc_dai *dai)
+ {
+-//	u32 reg_val;
+-#ifdef CONFIG_ARCH_SUN9I
+-	int is_play = 0, i = 0;
+-#endif
+-//#if defined CONFIG_ARCH_SUN9I || defined CONFIG_ARCH_SUN8IW6
+-//	/*Global Enable Digital Audio Interface*/
+-//	reg_val = readl(SUNXI_I2S1_VBASE + SUNXI_I2S1CTL);
+-//	reg_val |= SUNXI_I2S1CTL_GEN;
+-//	writel(reg_val, SUNXI_I2S1_VBASE + SUNXI_I2S1CTL);
+-//	msleep(10);
+-//	/*flush TX FIFO*/
+-//	reg_val = readl(SUNXI_I2S1_VBASE + SUNXI_I2S1FCTL);
+-//    reg_val |= SUNXI_I2S1FCTL_FTX;
+-//	writel(reg_val, SUNXI_I2S1_VBASE + SUNXI_I2S1FCTL);
+-//#endif
+-//#ifdef CONFIG_ARCH_SUN8IW7
+-//	/*Global Enable Digital Audio Interface*/
+-//	reg_val = readl(SUNXI_DAUDIO2_VBASE + SUNXI_DAUDIOCTL);
+-//	reg_val |= SUNXI_DAUDIOCTL_GEN;
+-//	writel(reg_val, SUNXI_DAUDIO2_VBASE + SUNXI_DAUDIOCTL);
+-//	msleep(10);
+-//	/*flush TX FIFO*/
+-//	reg_val = readl(SUNXI_DAUDIO2_VBASE + SUNXI_DAUDIOFCTL);
+-//	reg_val |= SUNXI_DAUDIOFCTL_FTX;
+-//	writel(reg_val, SUNXI_DAUDIO2_VBASE + SUNXI_DAUDIOFCTL);
+-//#endif
+ #ifdef hdmi_hw
+ 	if ((hdmi_para.data_raw > 1)||(hdmi_para.sample_bit!=16)||(hdmi_para.channel_num != 2)||(hdmi_para.sample_rate != 44100)||( hdmiaudio_reset_en == true)) {
+ 		atomic_set(&pcm_count_num, 0);
+@@ -180,22 +154,6 @@ int sndhdmi_prepare(struct snd_pcm_substream *substream,
+ 		g_hdmi_func.hdmi_set_audio_para(&hdmi_para);
+ 		g_hdmi_func.hdmi_audio_enable(1, 1);
+ 	}
+-
+-#ifdef CONFIG_ARCH_SUN9I
+-	is_play = g_hdmi_func.hdmi_is_playback();
+-	i = 0;
+-	while (!is_play) {
+-		i++;
+-		msleep(20);
+-		if(i>50)
+-			break;
+-		is_play = g_hdmi_func.hdmi_is_playback();
+-		if(is_play)
+-			break;
+-	}
+-	is_play = g_hdmi_func.hdmi_is_playback();
+-#endif
+-
+ #endif //hdmi_hw
+ 	return 0;
+ }
+-- 
+2.17.1
+

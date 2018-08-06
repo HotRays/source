@@ -4,7 +4,9 @@
 #
 
 . /lib/functions/uci-defaults.sh
+. /lib/sunxi_utils.sh
 
+env_reset_hw_addr
 board_config_update
 
 case "$(board_name)" in
@@ -26,6 +28,7 @@ case "$(board_name)" in
 	;;
 "tempe,tempe-a55")
 	ucidef_set_interfaces_lan_wan "usb0" "eth0"
+	ucidef_set_interface_macaddr "wan" `factory get eth0_mac`
 	;;
 *)
 	ucidef_set_interface_lan 'eth0'

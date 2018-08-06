@@ -13,7 +13,7 @@ define KernelPackage/rtc-sunxi
 	CONFIG_RTC_DRV_SUNXI \
 	CONFIG_RTC_CLASS=y
     FILES:=$(LINUX_DIR)/drivers/rtc/rtc-sunxi.ko
-    AUTOLOAD:=$(call AutoLoad,50,rtc-sunxi)
+    AUTOLOAD:=$(call AutoLoad,20,rtc-sunxi)
 endef
 
 define KernelPackage/rtc-sunxi/description
@@ -59,7 +59,7 @@ $(eval $(call KernelPackage,ata-sunxi))
 
 define KernelPackage/sun4i-emac
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=AllWinner EMAC Ethernet support
+  TITLE:=AllWinner sunx4i EMAC Ethernet support
   DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy
   KCONFIG:=CONFIG_SUN4I_EMAC
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun4i-emac.ko
@@ -90,7 +90,7 @@ endef
 $(eval $(call KernelPackage,dwmac-sun8i))
 
 define KernelPackage/sound-soc-sunxi
-  TITLE:=AllWinner built-in SoC sound support
+  TITLE:=AllWinner sun4i built-in SoC sound support
   KCONFIG:=CONFIG_SND_SUN4I_CODEC
   FILES:=$(LINUX_DIR)/sound/soc/sunxi/sun4i-codec.ko
   AUTOLOAD:=$(call AutoLoad,65,sun4i-codec)
@@ -99,7 +99,7 @@ define KernelPackage/sound-soc-sunxi
 endef
 
 define KernelPackage/sound-soc-sunxi/description
-  Kernel support for AllWinner built-in SoC audio
+  Kernel support for AllWinner sunx4i built-in SoC audio
 endef
 
 $(eval $(call KernelPackage,sound-soc-sunxi))
@@ -118,7 +118,7 @@ $(eval $(call KernelPackage,GobiNet))
 #sunxi watchdog
 define KernelPackage/sunxi_wdt
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=SUNXI watchdog support
+  TITLE:=SUNXI H6 watchdog support
   DEPENDS:=@TARGET_sunxi
   KCONFIG:=SUNXI_WATCHDOG=m
   FILES:=$(LINUX_DIR)/drivers/watchdog/sunxi_wdt.ko
@@ -126,3 +126,70 @@ define KernelPackage/sunxi_wdt
 endef
 
 $(eval $(call KernelPackage,sunxi_wdt))
+
+define KernelPackage/sunxi-pwm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SUNXI H6 PWM support
+  DEPENDS:=@TARGET_sunxi
+  KCONFIG:=CONFIG_PWM_SUNXI=m
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-sunxi.ko
+  AUTOLOAD:=$(call AutoLoad,30,pwm-sunxi)
+endef
+
+$(eval $(call KernelPackage,sunxi-pwm))
+
+define KernelPackage/sunxi-dma
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SUNXI H6 DMA support
+  DEPENDS:=@TARGET_sunxi
+  KCONFIG:=CONFIG_DMA_SUN6I=m \
+    CONFIG_DMA_SUN8I=m \
+    CONFIG_DMATEST
+  FILES:=$(LINUX_DIR)/drivers/dma/virt-dma.ko \
+    $(LINUX_DIR)/drivers/dma/sun6i-dma.ko \
+    $(LINUX_DIR)/drivers/dma/sun8i-dma.ko \
+    $(LINUX_DIR)/drivers/dma/dmatest.ko
+  AUTOLOAD:=$(call AutoLoad,20,sun6i-dma)
+endef
+
+$(eval $(call KernelPackage,sunxi-dma))
+
+# CONFIG_SND_SUNXI_SOC_AHUB
+# CONFIG_SND_SUNXI_SOC_DMIC
+# CONFIG_SND_SUNXI_SOC_DAUDIO_PLATFORM
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_netlink.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub_cpudai.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub_daudio.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi-sndahub.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_dmic.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi-snddmic.ko
+# $(LINUX_DIR)/sound/soc/sunxi/sunxi_daudio.ko
+define KernelPackage/sound-soc-h6
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=AllWinner H6 SoC sound support
+  KCONFIG:= \
+  CONFIG_SND_SUNXI_SOC_DMIC \
+  CONFIG_SND_SUNXI_SOC_DAUDIO_MACHINE \
+  CONFIG_SND_SUNXI_SOC_HDMIAUDIO \
+  CONFIG_SND_SUNXI_SOC_DMIC \
+	CONFIG_SND_AC200_CODEC
+  FILES:= \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_netlink.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub_cpudai.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_ahub_daudio.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi-sndahub.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi-snddaudio.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_dma.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_dmic.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi-snddmic.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi_hdmi.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/sunxi-sndhdmi.ko \
+  $(LINUX_DIR)/sound/soc/sunxi/acx00-codec.ko \
+  $(LINUX_DIR)/drivers/mfd/ac200.ko
+  AUTOLOAD:=$(call AutoProbe,acx00-codec sunxi_dma sunxi_netlink sunxi-sndahub sunxi_ahub_cpudai sunxi_ahub_daudio sunxi-snddaudio sunxi_dmic sunxi-snddmic sunxi_hdmi sunxi-sndhdmi)
+  DEPENDS:=@TARGET_sunxi kmod-sound-core +kmod-sound-soc-core
+endef
+
+$(eval $(call KernelPackage,sound-soc-h6))

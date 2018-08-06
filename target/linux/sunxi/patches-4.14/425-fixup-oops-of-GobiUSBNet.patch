@@ -1,0 +1,25 @@
+From 95337d9c09187c24dccc1d4d5f5be1ca8fcbe167 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Mon, 6 Aug 2018 10:31:52 +0800
+Subject: [PATCH 3/3] fixup oops of GobiUSBNet
+
+---
+ drivers/net/usb/GobiUSBNet.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/usb/GobiUSBNet.c b/drivers/net/usb/GobiUSBNet.c
+index 4cb3a1e14..f79787092 100644
+--- a/drivers/net/usb/GobiUSBNet.c
++++ b/drivers/net/usb/GobiUSBNet.c
+@@ -423,7 +423,7 @@ struct sk_buff *GobiNetDriverTxFixup(struct usbnet *dev, struct sk_buff *skb, gf
+ {
+     sGobiUSBNet * pGobiDev = (sGobiUSBNet *)dev->data[0];
+ 
+-    if (!pGobiDev->mbRawIPMode)
++    if (pGobiDev && !pGobiDev->mbRawIPMode)
+         return skb;
+         
+     // Skip Ethernet header from message
+-- 
+2.17.1
+
