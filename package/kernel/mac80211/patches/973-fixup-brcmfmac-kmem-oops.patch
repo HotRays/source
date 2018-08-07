@@ -1,0 +1,67 @@
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
+index 2a7ad7d..091b529 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
+@@ -444,7 +444,6 @@ struct brcmf_fw {
+ 	u16 bus_nr;
+ 	void (*done)(struct device *dev, int err, const struct firmware *fw,
+ 		     void *nvram_image, u32 nvram_len);
+-	struct completion *completion;
+ };
+ 
+ static void brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
+@@ -479,8 +478,6 @@ static void brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
+ 		goto fail;
+ 
+ 	fwctx->done(fwctx->dev, 0, fwctx->code, nvram, nvram_length);
+-	if (fwctx->completion)
+-		complete(fwctx->completion);
+ 	kfree(fwctx);
+ 	return;
+ 
+@@ -488,8 +485,6 @@ fail:
+ 	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
+ 	release_firmware(fwctx->code);
+ 	fwctx->done(fwctx->dev, -ENOENT, NULL, NULL, 0);
+-	if (fwctx->completion)
+-		complete(fwctx->completion);
+ 	kfree(fwctx);
+ }
+ 
+@@ -521,8 +516,6 @@ fail:
+ 	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
+ done:
+ 	fwctx->done(fwctx->dev, ret, fw, NULL, 0);
+-	if (fwctx->completion)
+-		complete(fwctx->completion);
+ 	kfree(fwctx);
+ }
+ 
+@@ -534,8 +527,6 @@ int brcmf_fw_get_firmwares_pcie(struct device *dev, u16 flags,
+ 				u16 domain_nr, u16 bus_nr)
+ {
+ 	struct brcmf_fw *fwctx;
+-	struct completion completion;
+-	int err;
+ 
+ 	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
+ 	if (!fw_cb || !code)
+@@ -556,17 +547,9 @@ int brcmf_fw_get_firmwares_pcie(struct device *dev, u16 flags,
+ 	fwctx->domain_nr = domain_nr;
+ 	fwctx->bus_nr = bus_nr;
+ 
+-	init_completion(&completion);
+-	fwctx->completion = &completion;
+-
+-	err = request_firmware_nowait(THIS_MODULE, true, code, dev,
++	return request_firmware_nowait(THIS_MODULE, true, code, dev,
+ 				       GFP_KERNEL, fwctx,
+ 				       brcmf_fw_request_code_done);
+-	if (!err)
+-		wait_for_completion_timeout(fwctx->completion,
+-					    msecs_to_jiffies(5000));
+-	fwctx->completion = NULL;
+-	return err;
+ }
+ 
+ int brcmf_fw_get_firmwares(struct device *dev, u16 flags,
