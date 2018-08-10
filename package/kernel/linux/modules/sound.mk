@@ -272,6 +272,21 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-gw_avila))
 
+define KernelPackage/pwmsp
+  DEPENDS:=+kmod-pwm-gpio
+  TITLE:=PWM speaker support
+  KCONFIG:= \
+	  CONFIG_SND_PWMSP
+  FILES:= $(LINUX_DIR)/sound/drivers/pwmsp/snd-pwmsp.ko
+  AUTOLOAD:=$(call AutoLoad,50,snd-pwmsp)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/pwmsp/description
+ This enables sounds (tones) through the pwm speaker
+endef
+
+$(eval $(call KernelPackage,pwmsp))
 
 define KernelPackage/pcspkr
   DEPENDS:=@TARGET_x86 +kmod-input-core

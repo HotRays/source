@@ -1,0 +1,251 @@
+From 89c5bae869e6894fb77a28fc5481bc8e43e73496 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Fri, 10 Aug 2018 14:32:35 +0800
+Subject: [PATCH 3/4] fixup dts for pwm asound
+
+---
+ .../dts/allwinner/sun50i-h6-tempe-a55.dts     |  30 ++---
+ arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi  | 118 ++++++++++++------
+ 2 files changed, 96 insertions(+), 52 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+index c27ea6e72..8c15510a5 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+@@ -54,41 +54,42 @@
+ 		compatible = "pwm-leds";
+ 		RJ45 {
+ 			label = "a55:white:RJ45";
+-			pwms = <&pwm_gpio 0 5000000 1>; /* 5ms */
++			pwms = <&pwm_gpio 0 5000000 0>; /* 5ms */
+ 			max-brightness = <255>;
+ 		};
+ 		WiFi {
+ 			label = "a55:white:WiFi";
+-			pwms = <&pwm_gpio 1 5000000 1>; /* 5ms */
++			pwms = <&pwm_gpio 1 5000000 0>; /* 5ms */
+ 			max-brightness = <255>;
+ 		};
+ 		LTE {
+ 			label = "a55:white:LTE";
+-			pwms = <&pwm_gpio 2 5000000 1>; /* 5ms */
++			pwms = <&pwm_gpio 2 5000000 0>; /* 5ms */
+ 			max-brightness = <255>;
+ 		};
+ 		status {
+ 			label = "a55:white:status";
+-			pwms = <&pwm_gpio 3 5000000 1>; /* 5ms */
++			pwms = <&pwm_gpio 3 5000000 0>; /* 5ms */
+ 			max-brightness = <255>;
+ 		};
+ 	};
+ 
+ 	speaker: spk@pwm {
+ 		compatible = "snd-pwmsp";
+-		pwms = <&pwm_gpio 4 1000000 0>; /* 1ms */
++		pwms = <&pwm_gpio 4 0 0>; /* 1us */
+ 		status = "okay";
+ 	};
+ 
+ 	pwm_gpio: pwm@gpio {
+ 		compatible = "pwm-gpio";
++		pinctrl-0 = <&pwm_gpios>;
+ 		#pwm-cells = <3>;
+ 
+-		pwm-gpios = <&pio 3 15 GPIO_ACTIVE_LOW>, /* PD15: 111 */
+-						<&pio 3 18 GPIO_ACTIVE_LOW>, /* PD18 */
+-						<&pio 3 17 GPIO_ACTIVE_LOW>, /* PD17 */
+-						<&pio 3 16 GPIO_ACTIVE_LOW>, /* PD16: 112 */
+-						<&pio 7 10 GPIO_ACTIVE_LOW>; /* PH10: 266 */
++		pwm-gpios = <&pio 3 15 GPIO_ACTIVE_HIGH>, /* PD15: 111 */
++						<&pio 3 18 GPIO_ACTIVE_HIGH>, /* PD18 */
++						<&pio 3 17 GPIO_ACTIVE_HIGH>, /* PD17 */
++						<&pio 3 16 GPIO_ACTIVE_HIGH>, /* PD16: 112 */
++						<&pio 7 10 GPIO_ACTIVE_HIGH>; /* PH10: 234 */
+ 	};
+ 
+ 	wifi_pwrseq: wifi_pwrseq {
+@@ -114,11 +115,10 @@
+ };
+ 
+ &pio {
+-	ec20_gpio: overwrite { /* overwrite */
+-		pins = "PD0", "PD1", "PD2", "PD3", "PD4",
+-			"PD5", "PD7", "PD8", "PD9", "PD10", "PD11";
+-		function = "gpio_in";
+-		bias-pull-down;
++	pwm_gpios: overwrite {
++		pins = "PH10", "PD15", "PD18", "PD17", "PD16";
++		function = "gpio_out";
++		drive-strength = <40>;
+ 	};
+ };
+ 
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
+index a963d7089..bf7636f27 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6.dtsi
+@@ -190,9 +190,28 @@
+ 				drive-strength = <40>;
+ 			};
+ 
++			pwm0_pins: pwm0-pins {
++				pins = "PD22";
++				function = "pwm";
++				drive-strength = <40>;
++			};
++
++			pwm0_pins_gpio: pwm0-pins-gpio {
++				pins = "PD22";
++				function = "gpio_out";
++				drive-strength = <40>;
++			};
++
+ 			pwm1_pins: pwm1-pins {
+ 				pins = "PB19";
+ 				function = "pwm1";
++				drive-strength = <40>;
++			};
++
++			pwm1_pins_gpio: pwm1-pins-gpio {
++				pins = "PB19";
++				function = "gpio_out";
++				drive-strength = <40>;
+ 			};
+ 
+ 			ext_rgmii_pins: rgmii_pins {
+@@ -292,6 +311,15 @@
+ 			};
+ 		};
+ 
++		soc_timer0: timer@03009000 {
++			compatible = "allwinner,sunxi-timer";
++			device_type = "timer";
++			reg = <0x03009000 0x400>;
++			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
++			clock-frequency = <24000000>;
++			timer-prescale = <16>;
++		};
++
+ 		rtc: rtc@07000000 {
+ 			compatible = "allwinner,sun50i-h6-rtc";
+ 			reg = <0x07000000 0x200>;
+@@ -356,6 +384,8 @@
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART0>;
+ 			resets = <&ccu RST_BUS_UART0>;
++			dmas = <&dma0 14>, <&dma0 14>;
++			dma-names = "rx", "tx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -625,19 +655,32 @@
+ 		};
+ 
+ 		pwm: pwm@0300a000 {
+-			compatible = "allwinner,sunxi-pwm";
+-			reg = <0x0300a000 0x3c>;
++			compatible = "allwinner,sun50i-h6-pwm";
++			reg = <0x0300a000 0x8>;
++			#pwm-cells = <3>;
+ 			clocks = <&ccu CLK_BUS_PWM>;
+-			// pwm-number = <2>;
+-			pwm-number = <1>;
+-			pwm-base = <0x0>;
+-			// pwms = <&pwm0>, <&pwm1>;
+-			pwms = <&pwm1>;
++			resets = <&ccu RST_BUS_PWM>;
++			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
++			pinctrl-1 = <&pwm0_pins_gpio>, <&pwm1_pins_gpio>;
++			pinctrl-names = "default", "sleep";
++			status = "okay";
+ 		};
+ 
++		// pwm: pwm@0300a000 {
++		// 	compatible = "allwinner,sunxi-pwm";
++		// 	reg = <0x0300a000 0x3c>;
++		// 	clocks = <&ccu CLK_BUS_PWM>;
++		// 	resets = <&ccu RST_BUS_PWM>;
++		// 	pwm-base = <0x0>;
++		// 	pwm-number = <2>;
++		// 	pwms = <&pwm0>, <&pwm1>;
++		// };
++
+ 		// pwm0: pwm0@0300a000 {
+ 		// 	compatible = "allwinner,sunxi-pwm0";
+-		// 	pinctrl-0 = <&>;
++		// 	pinctrl-names = "default", "sleep";
++		// 	pinctrl-0 = <&pwm0_pins>;
++		// 	pinctrl-1 = <&pwm0_pins_gpio>;
+ 		// 	reg_base = <0x0300a000>;
+ 		// 	reg_busy_offset = <0x00>;
+ 		// 	reg_busy_shift = <28>;
+@@ -664,35 +707,36 @@
+ 		// 	reg_prescal_width = <4>;
+ 		// };
+ 
+-		pwm1: pwm1@0300a000 {
+-			compatible = "allwinner,sunxi-pwm1";
+-			pinctrl-names = "default","sleep";
+-			pinctrl-0 = <&pwm1_pins>;
+-			reg_base = <0x0300a000>;
+-			reg_busy_offset = <0x00>;
+-			reg_busy_shift = <29>;
+-			reg_enable_offset = <0x00>;
+-			reg_enable_shift = <19>;
+-			reg_clk_gating_offset = <0x00>;
+-			reg_clk_gating_shift = <21>;
+-			reg_bypass_offset = <0x00>;
+-			reg_bypass_shift = <24>;
+-			reg_pulse_start_offset = <0x00>;
+-			reg_pulse_start_shift = <23>;
+-			reg_mode_offset = <0x00>;
+-			reg_mode_shift = <22>;
+-			reg_polarity_offset = <0x00>;
+-			reg_polarity_shift = <20>;
+-			reg_period_offset = <0x08>;
+-			reg_period_shift = <16>;
+-			reg_period_width = <16>;
+-			reg_active_offset = <0x08>;
+-			reg_active_shift = <0>;
+-			reg_active_width = <16>;
+-			reg_prescal_offset = <0x00>;
+-			reg_prescal_shift = <15>;
+-			reg_prescal_width = <4>;
+-		};
++		// pwm1: pwm1@0300a000 {
++		// 	compatible = "allwinner,sunxi-pwm1";
++		// 	pinctrl-names = "default", "sleep";
++		// 	pinctrl-0 = <&pwm1_pins>;
++		// 	pinctrl-1 = <&pwm1_pins_gpio>;
++		// 	reg_base = <0x0300a000>;
++		// 	reg_busy_offset = <0x00>;
++		// 	reg_busy_shift = <29>;
++		// 	reg_enable_offset = <0x00>;
++		// 	reg_enable_shift = <19>;
++		// 	reg_clk_gating_offset = <0x00>;
++		// 	reg_clk_gating_shift = <21>;
++		// 	reg_bypass_offset = <0x00>;
++		// 	reg_bypass_shift = <24>;
++		// 	reg_pulse_start_offset = <0x00>;
++		// 	reg_pulse_start_shift = <23>;
++		// 	reg_mode_offset = <0x00>;
++		// 	reg_mode_shift = <22>;
++		// 	reg_polarity_offset = <0x00>;
++		// 	reg_polarity_shift = <20>;
++		// 	reg_period_offset = <0x08>;
++		// 	reg_period_shift = <16>;
++		// 	reg_period_width = <16>;
++		// 	reg_active_offset = <0x08>;
++		// 	reg_active_shift = <0>;
++		// 	reg_active_width = <16>;
++		// 	reg_prescal_offset = <0x00>;
++		// 	reg_prescal_shift = <15>;
++		// 	reg_prescal_width = <4>;
++		// };
+ 
+ 		// s_pwm: s_pwm@07020c00 {
+ 		// 	compatible = "allwinner,sunxi-s_pwm";
+-- 
+2.17.1
+

@@ -120,12 +120,23 @@ define KernelPackage/sunxi_wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=SUNXI H6 watchdog support
   DEPENDS:=@TARGET_sunxi
-  KCONFIG:=SUNXI_WATCHDOG=m
+  KCONFIG:=CONFIG_SUNXI_WATCHDOG=m
   FILES:=$(LINUX_DIR)/drivers/watchdog/sunxi_wdt.ko
   AUTOLOAD:=$(call AutoProbe,sunxi_wdt)
 endef
 
 $(eval $(call KernelPackage,sunxi_wdt))
+
+define KernelPackage/sun4i-pwm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=SUN4I PWM support
+  DEPENDS:=@TARGET_sunxi
+  KCONFIG:=CONFIG_PWM_SUN4I=m
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-sun4i.ko
+  AUTOLOAD:=$(call AutoLoad,30,pwm-sun4i)
+endef
+
+$(eval $(call KernelPackage,sun4i-pwm))
 
 define KernelPackage/sunxi-pwm
   SUBMENU:=$(OTHER_MENU)
@@ -133,7 +144,7 @@ define KernelPackage/sunxi-pwm
   DEPENDS:=@TARGET_sunxi
   KCONFIG:=CONFIG_PWM_SUNXI=m
   FILES:=$(LINUX_DIR)/drivers/pwm/pwm-sunxi.ko
-  AUTOLOAD:=$(call AutoLoad,30,pwm-sunxi)
+  # AUTOLOAD:=$(call AutoLoad,30,pwm-sunxi)
 endef
 
 $(eval $(call KernelPackage,sunxi-pwm))

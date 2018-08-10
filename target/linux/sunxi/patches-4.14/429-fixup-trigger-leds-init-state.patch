@@ -1,0 +1,99 @@
+From fdaf9f639f7626bd359c7fc67433cc097dc140b9 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Fri, 10 Aug 2018 14:32:51 +0800
+Subject: [PATCH 4/4] fixup trigger leds init state
+
+---
+ drivers/leds/ledtrig-netdev.c            | 23 ++++++++++++++++-------
+ drivers/leds/trigger/ledtrig-heartbeat.c |  2 +-
+ 2 files changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/leds/ledtrig-netdev.c b/drivers/leds/ledtrig-netdev.c
+index 8d3249010..4dd51f9fb 100644
+--- a/drivers/leds/ledtrig-netdev.c
++++ b/drivers/leds/ledtrig-netdev.c
+@@ -80,13 +80,15 @@ struct led_netdev_data {
+ 	unsigned interval;
+ 	unsigned mode;
+ 	unsigned link_up;
+-	unsigned last_activity;
++	unsigned last_activity, last_brightness;
+ };
+ 
+ static void set_baseline_state(struct led_netdev_data *trigger_data)
+ {
++	unsigned on_value = trigger_data->last_brightness ?: LED_HALF;
++
+ 	if ((trigger_data->mode & MODE_LINK) != 0 && trigger_data->link_up)
+-		led_set_brightness(trigger_data->led_cdev, LED_FULL);
++		led_set_brightness(trigger_data->led_cdev, on_value);
+ 	else
+ 		led_set_brightness(trigger_data->led_cdev, LED_OFF);
+ 
+@@ -305,12 +307,18 @@ static void netdev_trig_work(struct work_struct *work)
+ {
+ 	struct led_netdev_data *trigger_data = container_of(work, struct led_netdev_data, work.work);
+ 	struct rtnl_link_stats64 *dev_stats;
+-	unsigned new_activity;
++	unsigned new_activity, on_value;
+ 	struct rtnl_link_stats64 temp;
+ 
++	if(trigger_data->led_cdev->brightness) {
++		//sync last brightness
++		trigger_data->last_brightness = trigger_data->led_cdev->brightness;
++	}
++	on_value = trigger_data->last_brightness ?: LED_HALF;
++
+ 	if (!trigger_data->link_up || !trigger_data->net_dev || (trigger_data->mode & (MODE_TX | MODE_RX)) == 0) {
+ 		/* we don't need to do timer work, just reflect link state. */
+-		led_set_brightness(trigger_data->led_cdev, ((trigger_data->mode & MODE_LINK) != 0 && trigger_data->link_up) ? LED_FULL : LED_OFF);
++		led_set_brightness(trigger_data->led_cdev, ((trigger_data->mode & MODE_LINK) != 0 && trigger_data->link_up) ? on_value : LED_OFF);
+ 		return;
+ 	}
+ 
+@@ -326,7 +334,7 @@ static void netdev_trig_work(struct work_struct *work)
+ 		/* OFF -> ON always */
+ 		/* ON -> OFF on activity */
+ 		if (trigger_data->led_cdev->brightness == LED_OFF) {
+-			led_set_brightness(trigger_data->led_cdev, LED_FULL);
++			led_set_brightness(trigger_data->led_cdev, on_value);
+ 		} else if (trigger_data->last_activity != new_activity) {
+ 			led_set_brightness(trigger_data->led_cdev, LED_OFF);
+ 		}
+@@ -334,10 +342,10 @@ static void netdev_trig_work(struct work_struct *work)
+ 		/* base state is OFF */
+ 		/* ON -> OFF always */
+ 		/* OFF -> ON on activity */
+-		if (trigger_data->led_cdev->brightness == LED_FULL) {
++		if (trigger_data->led_cdev->brightness == on_value) {
+ 			led_set_brightness(trigger_data->led_cdev, LED_OFF);
+ 		} else if (trigger_data->last_activity != new_activity) {
+-			led_set_brightness(trigger_data->led_cdev, LED_FULL);
++			led_set_brightness(trigger_data->led_cdev, on_value);
+ 		}
+ 	}
+ 
+@@ -369,6 +377,7 @@ static void netdev_trig_activate(struct led_classdev *led_cdev)
+ 	trigger_data->interval = msecs_to_jiffies(50);
+ 	trigger_data->link_up = 0;
+ 	trigger_data->last_activity = 0;
++	trigger_data->last_brightness = led_cdev->brightness;
+ 
+ 	led_cdev->trigger_data = trigger_data;
+ 
+diff --git a/drivers/leds/trigger/ledtrig-heartbeat.c b/drivers/leds/trigger/ledtrig-heartbeat.c
+index e95ea6538..494fa9945 100644
+--- a/drivers/leds/trigger/ledtrig-heartbeat.c
++++ b/drivers/leds/trigger/ledtrig-heartbeat.c
+@@ -137,7 +137,7 @@ static void heartbeat_trig_activate(struct led_classdev *led_cdev)
+ 		    led_heartbeat_function, (unsigned long) led_cdev);
+ 	heartbeat_data->phase = 0;
+ 	if (!led_cdev->blink_brightness)
+-		led_cdev->blink_brightness = led_cdev->max_brightness;
++		led_cdev->blink_brightness = led_cdev->max_brightness / 2;
+ 	led_heartbeat_function(heartbeat_data->timer.data);
+ 	set_bit(LED_BLINK_SW, &led_cdev->work_flags);
+ 	led_cdev->activated = true;
+-- 
+2.17.1
+

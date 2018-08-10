@@ -91,8 +91,10 @@ static int gpio_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
 {
 	struct gpio_pwm_data *gpio_data = pwm_get_chip_data(pwm);
 
-	pr_warn("gpio[%d] pwm:%d duty: %d ns, period: %d ns\n",
+	if(!gpio_data->on_time) {
+		pr_debug("gpio[%d] pwm:%d duty: %d ns, period: %d ns\n",
 				desc_to_gpio(gpio_data->gpiod), pwm->pwm, duty_ns, period_ns);
+	}
 
 	gpio_data->on_time = duty_ns;
 	gpio_data->off_time = period_ns - duty_ns;
@@ -119,7 +121,7 @@ static int gpio_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 		return -EBUSY;
 	}
 
-	pr_info("gpio-pwm enable chip: %d pwm: %d\n", pwm->hwpwm, pwm->pwm);
+	pr_debug("gpio-pwm enable chip: %d pwm: %d\n", pwm->hwpwm, pwm->pwm);
 	gpio_data->run = true;
 	if (gpio_data->off_time) {
 		hrtimer_start(&gpio_data->timer, ktime_set(0, 0),
@@ -214,8 +216,8 @@ static int gpio_pwm_probe(struct platform_device *pdev)
 			     CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 		gpio_data->timer.function = &gpio_pwm_timer;
 		gpio_data->gpiod = gpiod;
-		gpio_data->on_time = 500000;
-		gpio_data->off_time = 500000;
+		gpio_data->on_time = 0;
+		gpio_data->off_time = 0;
 		gpio_data->pin_on = false;
 		gpio_data->run = false;
 
