@@ -705,9 +705,12 @@ dnsmasq_start()
 		config_get tftp_root "$cfg" tftp_root
 		append EXTRA_MOUNT $tftp_root
 	}
-
-	config_foreach filter_dnsmasq host dhcp_host_add "$cfg"
-	echo >> $CONFIGFILE_TMP
+	
+	config_get odhcpd_is_active odhcpd maindhcp
+	if [ "$odhcpd_is_active" != "1" ] ; then
+		config_foreach filter_dnsmasq host dhcp_host_add "$cfg"
+		echo >> $CONFIGFILE_TMP
+	fi
 	config_foreach filter_dnsmasq boot dhcp_boot_add "$cfg"
 	config_foreach filter_dnsmasq mac dhcp_mac_add "$cfg"
 	config_foreach filter_dnsmasq tag dhcp_tag_add "$cfg"
@@ -747,7 +750,6 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
 	echo >> $CONFIGFILE_TMP
 
-	config_get odhcpd_is_active odhcpd maindhcp
 	if [ "$odhcpd_is_active" != "1" ]; then
 		config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
 	fi
