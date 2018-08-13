@@ -1,7 +1,7 @@
 #!/bin/sh
 
 env_iface="eth0"
-env_part="mmcblk2boot1"
+env_part="mmcblk1boot1"
 env_dev_path="/dev/$env_part"
 env_command="uboot-env -d $env_dev_path -o 0x0 -l 0x20000"
 

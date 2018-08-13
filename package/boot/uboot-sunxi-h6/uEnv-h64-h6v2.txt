@@ -1,5 +1,6 @@
+env exists bootcmd_emergency && run bootcmd_emergency
 setenv loadkernel fatload mmc 1 \$kernel_addr_r uImage
 setenv loaddtb fatload mmc 1 \$fdt_addr_r dtb
-setenv bootargs earlyprintk console=ttyS0,115200 root=/dev/mmcblk2p2 rootfstype=ext4 rootwait noinitrd
+setenv bootargs earlyprintk console=ttyS0,115200 root=/dev/mmcblk1p2 rootfstype=ext4 rootwait noinitrd
 setenv uenvcmd run loadkernel \&\& run loaddtb \&\& booti \$kernel_addr_r - \$fdt_addr_r
 run uenvcmd
