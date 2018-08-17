@@ -1,0 +1,76 @@
+From a1b97f15172871ba2b1c79032b1f7be67281ae18 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Fri, 17 Aug 2018 19:53:05 +0800
+Subject: [PATCH] disable mmc0 & fixup mmc bus width
+
+---
+ arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts | 9 +--------
+ drivers/clk/sunxi-ng/ccu-sun50i-h6.c                  | 8 ++++----
+ 2 files changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+index 8c15510a5..58aac9859 100644
+--- a/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
++++ b/arch/arm64/boot/dts/allwinner/sun50i-h6-tempe-a55.dts
+@@ -144,14 +144,6 @@
+ 	};
+ };
+ 
+-&mmc0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&mmc0_pins>;
+-	vmmc-supply = <&reg_aldo3>;
+-	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
+-	status = "okay";
+-};
+-
+ &mmc1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&mmc1_pins>;
+@@ -168,6 +160,7 @@
+ 	pinctrl-0 = <&mmc2_pins>;
+ 	vmmc-supply = <&reg_aldo3>;
+ 	vqmmc-supply = <&reg_bldo2>;
++	bus-width = <8>;
+ 	non-removable;
+ 	cap-mmc-hw-reset;
+ 	status = "okay";
+diff --git a/drivers/clk/sunxi-ng/ccu-sun50i-h6.c b/drivers/clk/sunxi-ng/ccu-sun50i-h6.c
+index c15428f36..ce6a9fd02 100644
+--- a/drivers/clk/sunxi-ng/ccu-sun50i-h6.c
++++ b/drivers/clk/sunxi-ng/ccu-sun50i-h6.c
+@@ -225,7 +225,7 @@ static SUNXI_CCU_MP_WITH_MUX(psi_ahb1_ahb2_clk, "psi-ahb1-ahb2",
+ 			     psi_ahb1_ahb2_parents,
+ 			     0x510,
+ 			     0, 5,	/* M */
+-			     16, 2,	/* P */
++			     8, 2,	/* P */
+ 			     24, 2,	/* mux */
+ 			     0);
+ 
+@@ -234,19 +234,19 @@ static const char * const ahb3_apb1_apb2_parents[] = { "osc24M", "osc32k",
+ 						       "pll-periph0" };
+ static SUNXI_CCU_MP_WITH_MUX(ahb3_clk, "ahb3", ahb3_apb1_apb2_parents, 0x51c,
+ 			     0, 5,	/* M */
+-			     16, 2,	/* P */
++			     8, 2,	/* P */
+ 			     24, 2,	/* mux */
+ 			     0);
+ 
+ static SUNXI_CCU_MP_WITH_MUX(apb1_clk, "apb1", ahb3_apb1_apb2_parents, 0x520,
+ 			     0, 5,	/* M */
+-			     16, 2,	/* P */
++			     8, 2,	/* P */
+ 			     24, 2,	/* mux */
+ 			     0);
+ 
+ static SUNXI_CCU_MP_WITH_MUX(apb2_clk, "apb2", ahb3_apb1_apb2_parents, 0x524,
+ 			     0, 5,	/* M */
+-			     16, 2,	/* P */
++			     8, 2,	/* P */
+ 			     24, 2,	/* mux */
+ 			     0);
+ 
+-- 
+2.17.1
+
