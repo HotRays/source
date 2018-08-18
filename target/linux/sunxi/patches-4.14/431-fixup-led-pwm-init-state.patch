@@ -1,0 +1,25 @@
+From 945290942871e0a39e324f960a48a11fc263f141 Mon Sep 17 00:00:00 2001
+From: fengmushu <fengmushu@gmail.com>
+Date: Sat, 18 Aug 2018 15:21:56 +0800
+Subject: [PATCH] fixup led pwm init state
+
+---
+ drivers/leds/leds-pwm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/leds/leds-pwm.c b/drivers/leds/leds-pwm.c
+index 8d456dc6c..263a09e7a 100644
+--- a/drivers/leds/leds-pwm.c
++++ b/drivers/leds/leds-pwm.c
+@@ -123,7 +123,7 @@ static int led_pwm_add(struct device *dev, struct led_pwm_priv *priv,
+ 	ret = led_classdev_register(dev, &led_data->cdev);
+ 	if (ret == 0) {
+ 		priv->num_leds++;
+-		led_pwm_set(&led_data->cdev, led_data->cdev.brightness);
++		led_pwm_set(&led_data->cdev, LED_HALF);
+ 	} else {
+ 		dev_err(dev, "failed to register PWM led for %s: %d\n",
+ 			led->name, ret);
+-- 
+2.17.1
+
