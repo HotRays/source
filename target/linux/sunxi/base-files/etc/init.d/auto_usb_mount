@@ -10,8 +10,18 @@ auto_mount_boot()
 		test $? -eq 0 && break
 		sleep 2
 	done
+
+	diskdev=sda
+	. /lib/upgrade/common.sh
+	export_bootdevice && export_partdevice diskdev $((0-BOOTDEV_MINOR))
+	diskdev=/dev/$diskdev
+
 	for DEV in `ls /dev/sd*[0-9]* 2>/dev/null`; do
 		[ x$DEV = x`mount | grep "$DEV " | awk '{print $1}'` ] && continue
+
+		test -f /rom/etc/sda.ready && {
+			echo $DEV | grep -q $diskdev && continue
+		}
 
 		ddir=/mnt/`basename $DEV`
 		mkdir -p "$ddir" || continue
@@ -21,6 +31,10 @@ auto_mount_boot()
 			logger -t "auto_usb_mount" "boot mount $DEV to $ddir failed!"
 		fi
 	done
+	test -e /etc/hotplug.d/block/20-auto_usb_mount || {
+		mkdir -p /etc/hotplug.d/block
+		ln -sf /etc/auto_usb_mount.hotplug /etc/hotplug.d/block/20-auto_usb_mount
+	}
 }
 
 boot() {
