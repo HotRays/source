@@ -7,8 +7,8 @@
 #
 
 set -ex
-[ $# -eq 6 ] || [ $# -eq 7 ] || {
-    echo "SYNTAX: $0 <file> <bootfs image> <rootfs image> <bootfs size> <rootfs size> <u-boot image> <failsafe image>"
+[ $# -eq 6 ] || [ $# -eq 9 ] || {
+    echo "SYNTAX: $0 <file> <bootfs image> <rootfs image> <bootfs size> <rootfs size> <u-boot image> <failsafe image> <dtb> <kernel-ramfs>"
     exit 1
 }
 
@@ -19,12 +19,25 @@ BOOTFSSIZE="$4"
 ROOTFSSIZE="$5"
 UBOOT="$6"
 FAILSAFE="$7"
+DTB="$8"
+KRAM="$9"
 
 head=4
 sect=63
 
 HPAD=
-test -n "$FAILSAFE" && HPAD=$((1024*32))
+test -n "$FAILSAFE" && {
+    HPAD=$((1024*32))
+    test -f "$FAILSAFE" || {
+        echo "failsafe not found, gennerate new one~!"
+        test -n "$DTB" || exit 1
+        test -n "$KRAM" || exit 1
+        dd if=/dev/zero of="$FAILSAFE" bs=1024 count=1024 conv=notrunc || exit 2
+        dd if="$DTB" of="$FAILSAFE" bs=1024 seek=0 conv=notrunc || exit 3
+        dd if="$KRAM" of="$FAILSAFE" bs=1024 seek=1024 conv=notrunc || exit 4
+    }
+}
+
 set `ptgen -o $OUTPUT -h $head -s $sect ${HPAD:+-L $HPAD} -l 1024 -t c -p ${BOOTFSSIZE}M -t 83 -p ${ROOTFSSIZE}M`
 
 FAILSAFEOFFSET=$((1024 * 1024 / 512))

@@ -26,7 +26,7 @@ define Build/sunxi-sdcard-failsafe
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin \
-		./$(FAILSAFE_IMG)
+		./$(FAILSAFE_IMG) $(DTS_DIR)/$(SUNXI_DTS).dtb $(KERNEL_BUILD_DIR)/$(KERNEL_INITRAMFS_NAME)
 	rm -f $@.boot
 endef
 
