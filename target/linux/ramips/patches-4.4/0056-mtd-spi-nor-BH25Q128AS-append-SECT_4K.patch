@@ -1,0 +1,13 @@
+diff -uNr a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+--- a/drivers/mtd/spi-nor/spi-nor.c	2018-11-08 03:49:34.450169414 +0000
++++ b/drivers/mtd/spi-nor/spi-nor.c	2018-11-08 04:53:43.717618165 +0000
+@@ -852,6 +852,9 @@
+ 	{ "cat25c09", CAT25_INFO( 128, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+ 	{ "cat25c17", CAT25_INFO( 256, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+ 	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++
++	/* BuaHong */
++	{ "BH25Q128AS", INFO(0x684018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ },
+ };
+ 
