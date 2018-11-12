@@ -28,7 +28,7 @@ case "$(board_name)" in
 	;;
 "tempe,tempe-a55")
 	ucidef_set_interfaces_lan_wan "usb0" "eth0"
-	ucidef_set_interface_macaddr "wan" `factory get eth0_mac`
+	ucidef_set_interface_macaddr "wan" `factory get eth0_mac | cut -d= -f2`
 	;;
 *)
 	ucidef_set_interface_lan 'eth0'
