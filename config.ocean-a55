@@ -39,7 +39,6 @@ CONFIG_TARGET_sunxi=y
 # CONFIG_TARGET_ipq40xx is not set
 # CONFIG_TARGET_ipq806x is not set
 # CONFIG_TARGET_au1000 is not set
-# CONFIG_TARGET_rtlmips is not set
 # CONFIG_TARGET_arc770 is not set
 # CONFIG_TARGET_archs38 is not set
 # CONFIG_TARGET_ar7 is not set
@@ -354,18 +353,18 @@ CONFIG_TARGET_INIT_ENV=""
 CONFIG_TARGET_INIT_CMD="/sbin/init"
 CONFIG_TARGET_INIT_SUPPRESS_STDERR=y
 CONFIG_VERSIONOPT=y
-CONFIG_VERSION_DIST="NATCAP"
-CONFIG_VERSION_NUMBER="3.0.0_build201803200557"
+CONFIG_VERSION_DIST="OBC"
+CONFIG_VERSION_NUMBER="3.0.0_build20181219"
 CONFIG_VERSION_CODE="Beetle"
 CONFIG_VERSION_REPO="http://downloads.openwrt.org/snapshots/trunk/%S/packages"
-CONFIG_VERSION_MANUFACTURER="PTPT52"
+CONFIG_VERSION_MANUFACTURER="TEMPE"
 CONFIG_VERSION_MANUFACTURER_URL="https://router-sh.ptpt52.com/"
 CONFIG_VERSION_BUG_URL="https://router-sh.ptpt52.com/"
 CONFIG_VERSION_SUPPORT_URL="https://router-sh.ptpt52.com/"
-CONFIG_VERSION_PRODUCT="NATCAP-Router"
-CONFIG_VERSION_HWREV=""
+CONFIG_VERSION_PRODUCT="A55"
+CONFIG_VERSION_HWREV="1.0"
 CONFIG_VERSION_FILENAMES=y
-# CONFIG_VERSION_CODE_FILENAMES is not set
+CONFIG_VERSION_CODE_FILENAMES=y
 CONFIG_PER_FEED_REPO=y
 CONFIG_PER_FEED_REPO_ADD_DISABLED=y
 CONFIG_PER_FEED_REPO_ADD_COMMENTED=y
@@ -2261,7 +2260,7 @@ CONFIG_DROPBEAR_CURVE25519=y
 # CONFIG_DROPBEAR_ECC is not set
 CONFIG_DROPBEAR_ZLIB=y
 # CONFIG_PACKAGE_ead is not set
-# CONFIG_PACKAGE_firewall is not set
+CONFIG_PACKAGE_firewall=y
 CONFIG_PACKAGE_fstools=y
 CONFIG_PACKAGE_fwtool=y
 CONFIG_PACKAGE_jsonfilter=y
@@ -2983,7 +2982,7 @@ CONFIG_PACKAGE_kmod-pwmsp=y
 #
 # USB Support
 #
-CONFIG_PACKAGE_kmod-GobiNet=y
+# CONFIG_PACKAGE_kmod-GobiNet is not set
 # CONFIG_PACKAGE_kmod-usb-acm is not set
 # CONFIG_PACKAGE_kmod-usb-atm is not set
 # CONFIG_PACKAGE_kmod-usb-cm109 is not set
@@ -2995,7 +2994,7 @@ CONFIG_PACKAGE_kmod-usb-ehci=y
 CONFIG_PACKAGE_kmod-usb-gadget=y
 # CONFIG_PACKAGE_kmod-usb-gadget-ehci-debug is not set
 CONFIG_PACKAGE_kmod-usb-gadget-eth=y
-# CONFIG_PACKAGE_kmod-usb-gadget-mass-storage is not set
+CONFIG_PACKAGE_kmod-usb-gadget-mass-storage=y
 # CONFIG_PACKAGE_kmod-usb-gadget-serial is not set
 # CONFIG_PACKAGE_kmod-usb-hid is not set
 # CONFIG_PACKAGE_kmod-usb-ledtrig-usbport is not set
@@ -3004,7 +3003,7 @@ CONFIG_PACKAGE_kmod-usb-net=y
 # CONFIG_PACKAGE_kmod-usb-net-asix is not set
 # CONFIG_PACKAGE_kmod-usb-net-asix-ax88179 is not set
 # CONFIG_PACKAGE_kmod-usb-net-cdc-eem is not set
-# CONFIG_PACKAGE_kmod-usb-net-cdc-ether is not set
+CONFIG_PACKAGE_kmod-usb-net-cdc-ether=y
 # CONFIG_PACKAGE_kmod-usb-net-cdc-mbim is not set
 # CONFIG_PACKAGE_kmod-usb-net-cdc-ncm is not set
 # CONFIG_PACKAGE_kmod-usb-net-cdc-subset is not set
@@ -3017,7 +3016,7 @@ CONFIG_PACKAGE_kmod-usb-net=y
 # CONFIG_PACKAGE_kmod-usb-net-mcs7830 is not set
 # CONFIG_PACKAGE_kmod-usb-net-pegasus is not set
 # CONFIG_PACKAGE_kmod-usb-net-pl is not set
-CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y
+# CONFIG_PACKAGE_kmod-usb-net-qmi-wwan is not set
 # CONFIG_PACKAGE_kmod-usb-net-rndis is not set
 # CONFIG_PACKAGE_kmod-usb-net-rtl8150 is not set
 # CONFIG_PACKAGE_kmod-usb-net-rtl8152 is not set
@@ -4122,7 +4121,7 @@ CONFIG_PACKAGE_libxml2=y
 # CONFIG_PACKAGE_poco is not set
 # CONFIG_PACKAGE_protobuf is not set
 # CONFIG_PACKAGE_pthsem is not set
-# CONFIG_PACKAGE_rpcd-mod-rrdns is not set
+CONFIG_PACKAGE_rpcd-mod-rrdns=y
 # CONFIG_PACKAGE_rxtx is not set
 # CONFIG_PACKAGE_sbc is not set
 CONFIG_PACKAGE_terminfo=y
@@ -4189,6 +4188,7 @@ CONFIG_LUCI_LANG_zh-cn=y
 CONFIG_PACKAGE_luci-mod-admin-full=y
 # CONFIG_PACKAGE_luci-mod-failsafe is not set
 # CONFIG_PACKAGE_luci-mod-freifunk is not set
+# CONFIG_PACKAGE_luci-mod-freifunk-community is not set
 # CONFIG_PACKAGE_luci-mod-rpc is not set
 
 #
@@ -4199,7 +4199,6 @@ CONFIG_PACKAGE_luci-mod-admin-full=y
 # CONFIG_PACKAGE_luci-app-ahcp is not set
 # CONFIG_PACKAGE_luci-app-aria2 is not set
 # CONFIG_PACKAGE_luci-app-asterisk is not set
-# CONFIG_PACKAGE_luci-app-attendedsysupgrade is not set
 # CONFIG_PACKAGE_luci-app-bcp38 is not set
 # CONFIG_PACKAGE_luci-app-bird4 is not set
 # CONFIG_PACKAGE_luci-app-bird6 is not set
@@ -4268,7 +4267,7 @@ CONFIG_PACKAGE_luci-mod-admin-full=y
 #
 # 4. Themes
 #
-# CONFIG_PACKAGE_luci-theme-bootstrap is not set
+CONFIG_PACKAGE_luci-theme-bootstrap=y
 # CONFIG_PACKAGE_luci-theme-freifunk-generic is not set
 # CONFIG_PACKAGE_luci-theme-material is not set
 # CONFIG_PACKAGE_luci-theme-openwrt is not set
@@ -4278,10 +4277,10 @@ CONFIG_PACKAGE_luci-mod-admin-full=y
 #
 # CONFIG_PACKAGE_luci-proto-3g is not set
 # CONFIG_PACKAGE_luci-proto-ipip is not set
-# CONFIG_PACKAGE_luci-proto-ipv6 is not set
+CONFIG_PACKAGE_luci-proto-ipv6=y
 # CONFIG_PACKAGE_luci-proto-ncm is not set
 # CONFIG_PACKAGE_luci-proto-openconnect is not set
-# CONFIG_PACKAGE_luci-proto-ppp is not set
+CONFIG_PACKAGE_luci-proto-ppp=y
 # CONFIG_PACKAGE_luci-proto-qmi is not set
 # CONFIG_PACKAGE_luci-proto-relay is not set
 # CONFIG_PACKAGE_luci-proto-vpnc is not set
@@ -5030,9 +5029,7 @@ CONFIG_PACKAGE_ntpclient=y
 # CONFIG_PACKAGE_spawn-fcgi is not set
 # CONFIG_PACKAGE_squid is not set
 # CONFIG_PACKAGE_tinyproxy is not set
-CONFIG_PACKAGE_uhttpd=y
-# CONFIG_PACKAGE_uhttpd-mod-lua is not set
-CONFIG_PACKAGE_uhttpd-mod-ubus=y
+# CONFIG_PACKAGE_uhttpd is not set
 
 #
 # dial-in/up
@@ -5329,11 +5326,11 @@ CONFIG_PACKAGE_wpad=y
 #
 # Natcap Support
 #
-CONFIG_PACKAGE_kmod-natcap=y
+# CONFIG_PACKAGE_kmod-natcap is not set
 # CONFIG_PACKAGE_luci-app-natcap is not set
-CONFIG_PACKAGE_natcapd=y
+# CONFIG_PACKAGE_natcapd is not set
 # CONFIG_PACKAGE_natcapd-client is not set
-# CONFIG_PACKAGE_natcapd-mini is not set
+# CONFIG_PACKAGE_natcapd-peer is not set
 # CONFIG_PACKAGE_natcapd-server is not set
 # CONFIG_PACKAGE_userauth is not set
 
@@ -5343,6 +5340,7 @@ CONFIG_PACKAGE_natcapd=y
 CONFIG_PACKAGE_OceanBlue=y
 # CONFIG_PACKAGE_OrangeVR is not set
 CONFIG_PACKAGE_TempeComFiles=y
+# CONFIG_PACKAGE_brcm-patchram is not set
 CONFIG_PACKAGE_quectel-CM=y
 CONFIG_PACKAGE_tinyalsa=y
 
