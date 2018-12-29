@@ -101,6 +101,13 @@ define Device/nxc200p
 endef
 TARGET_DEVICES += nxc200p
 
+define Device/mt7621_slt868
+  DTS := MT7621_SLT868
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := MT7621 SLT868 Device
+endef
+TARGET_DEVICES += mt7621_slt868
+
 define Device/pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

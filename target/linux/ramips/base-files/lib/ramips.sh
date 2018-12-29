@@ -205,6 +205,9 @@ ramips_board_detect() {
 	*"Openwrt Nxc200p")
 		name="nxc200p"
 		;;
+	*"Openwrt SLT868")
+		name="mt7621_slt868"
+		;;
 	*"Fonera 2.0N")
 		name="fonera20n"
 		;;
