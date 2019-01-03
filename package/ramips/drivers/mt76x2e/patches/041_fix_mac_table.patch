@@ -1,0 +1,101 @@
+diff -uNr a/rlt_wifi/common/cmm_info.c b/rlt_wifi/common/cmm_info.c
+--- a/rlt_wifi/common/cmm_info.c	2018-08-16 09:34:27.000000000 +0000
++++ b/rlt_wifi/common/cmm_info.c	2018-08-16 13:26:24.000000000 +0000
+@@ -2722,6 +2722,8 @@
+ 	RT_802_11_MAC_TABLE *pMacTab = NULL;
+ 	PRT_802_11_MAC_ENTRY pDst;
+ 	MAC_TABLE_ENTRY *pEntry;
++	ULONG ReTXRate, ReRXRate;
++	HTTRANSMIT_SETTING Val_RxRate;
+ 
+ 	/* allocate memory */
+ 	os_alloc_mem(NULL, (UCHAR **)&pMacTab, sizeof(RT_802_11_MAC_TABLE));
+@@ -2732,13 +2734,13 @@
+ 	}
+ 
+ 	NdisZeroMemory(pMacTab, sizeof(RT_802_11_MAC_TABLE));
++	pMacTab->Num = 0;
+ 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+ 	{
+ 		pEntry = &(pAd->MacTab.Content[i]);
+-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
++		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry)) && (pEntry->Sst == SST_ASSOC))
+ 		{
+ 			pDst = &pMacTab->Entry[pMacTab->Num];
+-
+ 			pDst->ApIdx = pEntry->apidx;
+ 			COPY_MAC_ADDR(pDst->Addr, &pEntry->Addr);
+ 			pDst->Aid = (UCHAR)pEntry->Aid;
+@@ -2758,7 +2760,13 @@
+ 			pDst->TxRate.word = pEntry->HTPhyMode.word;
+ 
+ 			pDst->LastRxRate = pEntry->LastRxRate;
+-									
++			pDst->LastTxRate = pEntry->LastTxRate;
++			Val_RxRate.word = (unsigned short)pEntry->LastRxRate;
++			getRate(Val_RxRate, &ReRXRate);
++			pDst->ReRxRate = ReRXRate;
++			getRate(pEntry->HTPhyMode, &ReTXRate);
++			pDst->ReTxRate = ReTXRate;
++								
+ 			pMacTab->Num += 1;
+ 		}
+ 	}
+@@ -2799,8 +2807,9 @@
+ 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
+ 	{
+ 		pEntry = &(pAd->MacTab.Content[i]);
+-
+-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
++		
++//		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
++		if ((IS_ENTRY_CLIENT(pEntry) || IS_ENTRY_APCLI(pEntry)) && (pEntry->Sst == SST_ASSOC))
+ 		{
+ 			pDst = &pMacTab->Entry[pMacTab->Num];
+ 
+@@ -2828,6 +2837,7 @@
+ 									
+ #ifdef RTMP_RBUS_SUPPORT
+ 			pDst->LastRxRate = pEntry->LastRxRate;
++			pDst->LastTxRate = pEntry->LastTxRate;
+ /*			pDst->TxPER = pEntry->SaveTxPER; */
+ #endif /* RTMP_RBUS_SUPPORT */
+ 									
+@@ -2874,7 +2884,6 @@
+ 		}
+ 	} 
+ 	/* for compatible with old API just do the printk to console*/
+-
+ 	DBGPRINT(RT_DEBUG_TRACE, ("%s", msg));
+ 	os_free_mem(NULL, msg);
+ 
+diff -uNr a/rlt_wifi/include/oid.h b/rlt_wifi/include/oid.h
+--- a/rlt_wifi/include/oid.h	2016-12-01 11:25:52.000000000 +0000
++++ b/rlt_wifi/include/oid.h	2018-08-16 13:22:29.000000000 +0000
+@@ -1260,6 +1260,11 @@
+ 	UINT32 AvgSnr;
+ #endif
+ 	UINT32 LastRxRate;
++	UINT32 LastTxRate;
++	
++	UINT32 ReRxRate;
++	UINT32 ReTxRate;
++
+ 
+ //sync with MT7620
+ //#if 1//def RTMP_RBUS_SUPPORT
+diff -uNr a/rlt_wifi/os/linux/ap_ioctl.c b/rlt_wifi/os/linux/ap_ioctl.c
+--- a/rlt_wifi/os/linux/ap_ioctl.c	2018-08-16 13:42:15.000000000 +0000
++++ b/rlt_wifi/os/linux/ap_ioctl.c	2018-08-16 06:29:36.000000000 +0000
+@@ -81,7 +81,10 @@
+   "get_ba_table"},
+ { RTPRIV_IOCTL_STATISTICS,
+   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024,
+-  "stat"}
++  "stat"},
++{ RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT,
++  IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024,
++  "get_mactable_st"}
+ };
+ 
+ 

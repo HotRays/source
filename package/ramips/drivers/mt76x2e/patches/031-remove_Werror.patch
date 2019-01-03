@@ -1,0 +1,13 @@
+diff -urN a/rlt_wifi_ap/Makefile b/rlt_wifi_ap/Makefile
+--- a/rlt_wifi_ap/Makefile	2018-08-06 20:56:59.007986538 +0800
++++ b/rlt_wifi_ap/Makefile	2018-08-06 20:57:20.199819202 +0800
+@@ -687,7 +687,8 @@
+ #  CFLAGS
+ ##################
+ EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT  -DLINUX \
+-               -Wall -Wstrict-prototypes -Wno-trigraphs
++               -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-date-time -Wno-incompatible-pointer-types \
++               -Wno-unused-variable
+ #-DDBG_DIAGNOSE -DDBG_RX_MCS -DDBG_TX_MCS
+ 
+ EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DSCAN_SUPPORT -DAP_SCAN_SUPPORT -DUAPSD_SUPPORT -DUAPSD_SP_ACCURATE -DAP_PARTIAL_SCAN_SUPPORT

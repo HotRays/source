@@ -1,0 +1,13 @@
+diff -uNr a/rlt_wifi/common/cmm_info.c b/rlt_wifi/common/cmm_info.c
+--- a/rlt_wifi/common/cmm_info.c	2016-05-26 17:22:23.000000000 +0800
++++ b/rlt_wifi/common/cmm_info.c	2018-09-17 15:32:48.000000000 +0800
+@@ -2517,7 +2517,8 @@
+ 
+ 		/*SSID*/
+ 	NdisZeroMemory(Ssid, (MAX_LEN_OF_SSID +1));
+-	if (RTMPCheckStrPrintAble((PCHAR)pBss->Ssid, pBss->SsidLen))
++	//if (RTMPCheckStrPrintAble((PCHAR)pBss->Ssid, pBss->SsidLen))
++	if (1)
+ 		NdisMoveMemory(Ssid, pBss->Ssid, pBss->SsidLen);
+ 	else
+ 	{

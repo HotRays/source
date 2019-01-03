@@ -1,0 +1,14 @@
+diff -uNr a/rlt_wifi/common/rt_os_util.c b/rlt_wifi/common/rt_os_util.c
+--- a/rlt_wifi/common/rt_os_util.c	2018-08-16 11:20:34.141779638 +0800
++++ b/rlt_wifi/common/rt_os_util.c	2018-08-16 11:20:16.322345454 +0800
+@@ -51,6 +51,10 @@
+ 			Antenna = (MCS / 10)+1;
+ 			MCS_1NSS %= 10;
+ 		}
++                if(BW == 0)
++                {
++                        MCS_1NSS = 7;
++                }
+         *pRate = RalinkRate_VHT_1NSS[BW][ShortGI][MCS_1NSS];
+     }
+     else

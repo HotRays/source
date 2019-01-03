@@ -1,0 +1,12 @@
+diff -uNr a/rlt_wifi_ap/Makefile b/rlt_wifi_ap/Makefile
+--- a/rlt_wifi_ap/Makefile	2016-05-26 17:22:11.000000000 +0800
++++ b/rlt_wifi_ap/Makefile	2018-09-15 12:12:12.000000000 +0800
+@@ -3,7 +3,7 @@
+ 
+ DRV_NAME = rlt_wifi
+ RT_WIFI_DIR = ../rlt_wifi
+-
++EXTRA_CFLAGS += -DCONFIG_SUPPORT_OPENWRT -DCONFIG_RALINK_MT7603E
+ ########################################################
+ # Common files
+ ########################################################

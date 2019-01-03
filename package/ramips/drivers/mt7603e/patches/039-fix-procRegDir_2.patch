@@ -1,0 +1,12 @@
+diff -uNr a/rlt_wifi/os/linux/rt_proc.c b/rlt_wifi/os/linux/rt_proc.c
+--- a/rlt_wifi/os/linux/rt_proc.c	2016-05-26 17:22:15.000000000 +0800
++++ b/rlt_wifi/os/linux/rt_proc.c	2018-09-15 18:16:55.000000000 +0800
+@@ -507,6 +507,8 @@
+ #endif /* VIDEO_TURBINE_SUPPORT */
+ 	}
+ 
++	if (procRegDir)
++	proc_remove(procRegDir);
+ 	return 0;
+ }
+ 

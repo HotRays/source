@@ -1,0 +1,14 @@
+diff -urN a/rlt_wifi/ap/ap_apcli.c b/rlt_wifi/ap/ap_apcli.c
+--- a/rlt_wifi/ap/ap_apcli.c	2018-08-21 15:23:55.570153234 +0800
++++ b/rlt_wifi/ap/ap_apcli.c	2018-08-21 15:37:32.546951106 +0800
+@@ -3026,7 +3026,9 @@
+ 
+ 		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
+ 							(pBssEntry->SsidLen == CfgSsidLen) &&
+-							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
++							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE) &&
++							(MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR) ||
++							MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pBssEntry->Bssid)))
+ 		{
+ 
+ 			if (wdev->bWpaAutoMode == TRUE)

@@ -1,0 +1,13 @@
+diff -uNr a/rlt_wifi_ap/Makefile b/rlt_wifi_ap/Makefile
+--- a/rlt_wifi_ap/Makefile	2016-05-26 17:22:11.000000000 +0800
++++ b/rlt_wifi_ap/Makefile	2018-09-15 14:23:20.000000000 +0800
+@@ -658,6 +658,9 @@
+ EXTRA_CFLAGS += -DMT_PS -DDMA_RESET_SUPPORT -DTXRXCR_DEBUG_SUPPORT
+ EXTRA_CFLAGS += -DMT7603_E1
+ EXTRA_CFLAGS += -DMT7603_E2
++EXTRA_CFLAGS += -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-date-time -Wno-incompatible-pointer-types \
++				-Wno-unused-variable -Wno-misleading-indentation
++
+ #EXTRA_CFLAGS += -Os -DECONET_ALPHA_RELEASE
+ #EXTRA_CFLAGS += -DMEMORY_OPTIMIZATION
+ #Force Load F/W one time

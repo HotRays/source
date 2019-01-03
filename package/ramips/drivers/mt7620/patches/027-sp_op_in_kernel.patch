@@ -1,0 +1,10 @@
+diff -urN a/build/Makefile b/build/Makefile
+--- a/build/Makefile	2018-08-07 17:30:37.083503254 +0800
++++ b/build/Makefile	2018-08-07 17:31:29.414700262 +0800
+@@ -1,5 +1,6 @@
+ ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
+ EXTRA_CFLAGS = -I$(src)/../src/include -I$(src)/../src/ate/include
++EXTRA_CFLAGS += -DCONFIG_SUPPORT_OPENWRT -DCONFIG_RALINK_MT7620
+ DRV_NAME = mt7620
+ SRC_DIR = ../src
+ obj-m += $(DRV_NAME).o

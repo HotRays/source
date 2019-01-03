@@ -1,0 +1,13 @@
+diff -urN a/rlt_wifi/ap/ap.c b/rlt_wifi/ap/ap.c
+--- a/rlt_wifi/ap/ap.c	2018-08-22 11:09:02.248903140 +0800
++++ b/rlt_wifi/ap/ap.c	2018-08-22 11:10:32.131615312 +0800
+@@ -521,7 +521,8 @@
+ 	}
+ 	
+ 	/* Set the RadarDetect Mode as Normal, bc the APUpdateAllBeaconFram() will refer this parameter. */
+-	RadarStateCheck(pAd);
++//	RadarStateCheck(pAd);
++	pAd->Dot11_H.RDMode = RD_NORMAL_MODE;
+ 
+ #ifdef CUSTOMER_DCC_FEATURE
+ 	pAd->CommonCfg.channelSwitch.CHSWMode = NORMAL_MODE;

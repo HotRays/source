@@ -1,0 +1,21 @@
+diff -urN a/rlt_wifi/os/linux/rt_linux.c b/rlt_wifi/os/linux/rt_linux.c
+--- a/rlt_wifi/os/linux/rt_linux.c	2018-08-06 21:01:44.926044959 +0800
++++ b/rlt_wifi/os/linux/rt_linux.c	2018-08-06 21:02:16.561864796 +0800
+@@ -328,7 +328,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_read_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }
+@@ -344,7 +344,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_write_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }

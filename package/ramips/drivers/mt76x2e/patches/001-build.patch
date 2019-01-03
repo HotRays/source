@@ -1,0 +1,48 @@
+diff -urN a/rlt_wifi_ap/Makefile b/rlt_wifi_ap/Makefile
+--- a/rlt_wifi_ap/Makefile	2018-08-06 20:18:01.706507426 +0800
++++ b/rlt_wifi_ap/Makefile	2018-08-06 20:22:40.780919432 +0800
+@@ -1,12 +1,6 @@
+-ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
+-EXTRA_CFLAGS = -I$(src)/../src/include -I$(src)/../src/ate/include
++EXTRA_CFLAGS = -I$(src)/../rlt_wifi/include -I$(src)/../rlt_wifi/ate/include
+ DRV_NAME = mt76x2e
+-RT_WIFI_DIR = ../src
+-else
+-EXTRA_CFLAGS = -Idrivers/net/wireless/rlt_wifi/include -Idrivers/net/wireless/rlt_wifi/ate/include
+-DRV_NAME = rlt_wifi
+ RT_WIFI_DIR = ../rlt_wifi
+-endif
+ 
+ ########################################################
+ # Common files
+@@ -655,11 +649,7 @@
+ #
+ # Root 
+ #
+-ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
+ obj-m += $(DRV_NAME).o
+-else
+-obj-$(CONFIG_RLT_AP_SUPPORT) += $(DRV_NAME).o
+-endif
+ 
+ $(DRV_NAME)-objs += $(cmm_objs) $(asic_objs) $(chip_objs) $(rate_objs)\
+                     $(spec_objs) $(func_objs) $(ap_objs) $(os_objs)
+@@ -758,8 +748,7 @@
+ endif
+ endif
+ 
+-# For OpenWrt compatibility
+-ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
++
+ EXTRA_CFLAGS += -DCONFIG_RT_FIRST_CARD=$(CONFIG_RT_FIRST_CARD)
+ EXTRA_CFLAGS += -DCONFIG_RT_SECOND_CARD=$(CONFIG_RT_SECOND_CARD)
+ 
+@@ -776,7 +765,7 @@
+ EXTRA_CFLAGS += -DCONFIG_RT_FIRST_CARD_EEPROM="\"flash\""
+ endif
+ endif
+-endif
++
+ 
+ ifeq ($(CONFIG_SECOND_IF_EEPROM_PROM),y)
+ EXTRA_CFLAGS += -DCONFIG_RT_SECOND_CARD_EEPROM="\"prom\""

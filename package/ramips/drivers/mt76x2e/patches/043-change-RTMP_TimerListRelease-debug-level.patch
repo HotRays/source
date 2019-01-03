@@ -1,0 +1,12 @@
+diff -uNr a/rlt_wifi/common/rtmp_init.c b/rlt_wifi/common/rtmp_init.c
+--- a/rlt_wifi/common/rtmp_init.c	2018-08-18 10:52:37.209418816 +0800
++++ b/rlt_wifi/common/rtmp_init.c	2018-08-18 10:57:06.514400218 +0800
+@@ -3721,7 +3721,7 @@
+ 		delEntryList(pRscList, pListEntry);
+ 
+ 		/* free a timer record entry */
+-		DBGPRINT(RT_DEBUG_ERROR, ("%s: release timer obj %lx!\n", __FUNCTION__, (ULONG)pRsc));
++		DBGPRINT(RT_DEBUG_INFO, ("%s: release timer obj %lx!\n", __FUNCTION__, (ULONG)pRsc));
+ 		os_free_mem(NULL, pObj);
+ 	}
+ }

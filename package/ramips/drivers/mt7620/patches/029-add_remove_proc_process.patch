@@ -1,0 +1,13 @@
+diff -urN b/src/os/linux/rt_proc.c c/src/os/linux/rt_proc.c
+--- b/src/os/linux/rt_proc.c	2018-08-07 18:18:36.150005633 +0800
++++ c/src/os/linux/rt_proc.c	2018-08-07 19:40:20.067842589 +0800
+@@ -526,7 +526,8 @@
+ 		remove_proc_entry("wl", procRegDir);
+ #endif /* VIDEO_TURBINE_SUPPORT */
+ 
+-	
++	if (procRegDir)
++		proc_remove(procRegDir);
+ 	return 0;
+ }
+ #else

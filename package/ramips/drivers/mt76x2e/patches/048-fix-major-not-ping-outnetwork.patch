@@ -1,0 +1,45 @@
+diff -uNr a/rlt_wifi/common/cmm_mat_iparp.c b/rlt_wifi/common/cmm_mat_iparp.c
+--- a/rlt_wifi/common/cmm_mat_iparp.c	2018-09-07 18:46:55.841232365 +0800
++++ b/rlt_wifi/common/cmm_mat_iparp.c	2018-09-07 18:52:17.131875570 +0800
+@@ -350,12 +350,15 @@
+ }
+ 
+ 
++UCHAR BOARDCAST_ARR[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
++UCHAR ETHER_MACADDR[6];
+ static NDIS_STATUS IPMacTable_init(
+ 	IN MAT_STRUCT *pMatCfg)
+ {
+ 	IPMacMappingTable *pIPMacTable;
+ 	IPMacMappingEntry *pEntry = NULL;
+ 
++	RtmpFlashRead(ETHER_MACADDR, 0x40000 + 0x28, MAC_ADDR_LEN);
+ 
+ 	if (pMatCfg->MatTableSet.IPMacTable != NULL)
+ 	{
+@@ -545,7 +548,6 @@
+ 	return status;
+ }
+ 
+-
+ static PUCHAR MATProto_IP_Rx(
+ 	IN MAT_STRUCT 		*pMatCfg, 
+ 	IN PNDIS_PACKET		pSkb,
+@@ -557,10 +559,16 @@
+ #endif /* MAC_REPEATER_SUPPORT */
+ 	PUCHAR	 pMacAddr;
+ 	UINT   	dstIP;
+-	
++
+ 	/* Fetch the IP addres from the packet header. */
+ 	getDstIPFromIpPkt(pLayerHdr, &dstIP);
+ 	pMacAddr = IPMacTableLookUp(pMatCfg, dstIP); 
++	if (memcmp(pMacAddr, BOARDCAST_ARR, 6) == 0)
++	{
++		DBGPRINT(RT_DEBUG_ERROR, ("func=%s() line=%d the pMacAddr is boardcast! \n", __FUNCTION__, __LINE__));
++		DBGPRINT(RT_DEBUG_ERROR, ("func=%s() line=%d update pMacAddr to %02x:%02x:%02x:%02x:%02x:%02x ! \n", __FUNCTION__, __LINE__, PRINT_MAC(ETHER_MACADDR)));
++		memcpy(pMacAddr, ETHER_MACADDR, 6);
++	}
+ 	
+ #ifdef MAC_REPEATER_SUPPORT
+ 	if (pAd == NULL)

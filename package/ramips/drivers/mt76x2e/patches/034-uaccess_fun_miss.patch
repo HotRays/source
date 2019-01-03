@@ -1,0 +1,24 @@
+diff -urN a/rlt_wifi/include/os/rt_linux.h b/rlt_wifi/include/os/rt_linux.h
+--- a/rlt_wifi/include/os/rt_linux.h	2018-08-06 20:59:26.994903228 +0800
++++ b/rlt_wifi/include/os/rt_linux.h	2018-08-06 20:59:50.086750478 +0800
+@@ -47,7 +47,7 @@
+ /* load firmware */
+ #define __KERNEL_SYSCALLS__
+ #include <linux/unistd.h>
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ #include <asm/types.h>
+ #include <asm/unaligned.h>	/* for get_unaligned() */
+ 
+diff -urN a/rlt_wifi/os/linux/rt_proc.c b/rlt_wifi/os/linux/rt_proc.c
+--- a/rlt_wifi/os/linux/rt_proc.c	2018-08-06 20:59:26.990903254 +0800
++++ b/rlt_wifi/os/linux/rt_proc.c	2018-08-06 20:59:45.054783429 +0800
+@@ -29,7 +29,7 @@
+ #include <linux/kernel.h>
+ #include <linux/types.h>
+ #include <linux/proc_fs.h>
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ 
+ #include "rt_config.h"
+ 

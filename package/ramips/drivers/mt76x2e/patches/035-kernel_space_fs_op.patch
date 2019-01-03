@@ -1,0 +1,86 @@
+diff -urN a/rlt_wifi/os/linux/rt_linux.c b/rlt_wifi/os/linux/rt_linux.c
+--- a/rlt_wifi/os/linux/rt_linux.c	2018-08-06 21:00:09.830622938 +0800
++++ b/rlt_wifi/os/linux/rt_linux.c	2018-08-06 21:01:06.058274293 +0800
+@@ -896,22 +896,78 @@
+ 	osfd->f_pos = offset;
+ }
+ 
++static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, loff_t *ppos)
++{
++	struct iovec iov = { .iov_base = buf, .iov_len = len };
++	struct kiocb kiocb;
++	struct iov_iter iter;
++	ssize_t ret;
++
++	init_sync_kiocb(&kiocb, filp);
++	kiocb.ki_pos = *ppos;
++	iov_iter_init(&iter, READ, &iov, 1, len);
++
++	ret = filp->f_op->read_iter(&kiocb, &iter);
++	BUG_ON(ret == -EIOCBQUEUED);
++	*ppos = kiocb.ki_pos;
++	return ret;
++}
+ 
+ int RtmpOSFileRead(RTMP_OS_FD osfd, char *pDataPtr, int readLen)
+ {
+ 	/* The object must have a read method */
+-	if (osfd->f_op && osfd->f_op->read) {
+-		return osfd->f_op->read(osfd, pDataPtr, readLen, &osfd->f_pos);
+-	} else {
++	if (osfd->f_op) {
++		if (osfd->f_op->read) {
++			return osfd->f_op->read(osfd, pDataPtr, readLen, &osfd->f_pos);
++		}
++		else if (osfd->f_op->read_iter) {
++			return 	new_sync_read(osfd, pDataPtr, readLen, &osfd->f_pos);
++		}
++		else{
++			DBGPRINT(RT_DEBUG_ERROR, ("no file read method\n"));
++		}
++	}
++	else {
+ 		DBGPRINT(RT_DEBUG_ERROR, ("no file read method\n"));
+ 		return -1;
+ 	}
+ }
+ 
++static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t len, loff_t *ppos)
++{
++	struct iovec iov = { .iov_base = (void __user *)buf, .iov_len = len };
++	struct kiocb kiocb;
++	struct iov_iter iter;
++	ssize_t ret;
++
++	init_sync_kiocb(&kiocb, filp);
++	kiocb.ki_pos = *ppos;
++	iov_iter_init(&iter, WRITE, &iov, 1, len);
++
++	ret = filp->f_op->write_iter(&kiocb, &iter);
++	BUG_ON(ret == -EIOCBQUEUED);
++	if (ret > 0)
++		*ppos = kiocb.ki_pos;
++	return ret;
++}
+ 
+ int RtmpOSFileWrite(RTMP_OS_FD osfd, char *pDataPtr, int writeLen)
+ {
+-	return osfd->f_op->write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++	if (osfd->f_op) {
++		if (osfd->f_op->write) {
++			return osfd->f_op->write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++		}
++		else if (osfd->f_op->write_iter) {
++			return 	new_sync_write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++		}
++		else{
++			DBGPRINT(RT_DEBUG_ERROR, ("no file write method\n"));
++		}
++	}
++	else {
++		DBGPRINT(RT_DEBUG_ERROR, ("no file write method\n"));
++		return -1;
++	}
+ }
+ 
+ 

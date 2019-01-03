@@ -1,0 +1,30 @@
+diff -uNr a/rlt_wifi/common/igmp_snoop.c b/rlt_wifi/common/igmp_snoop.c
+--- a/rlt_wifi/common/igmp_snoop.c	2018-09-08 15:27:12.005214344 +0800
++++ b/rlt_wifi/common/igmp_snoop.c	2018-09-08 15:29:50.594066912 +0800
+@@ -199,7 +199,7 @@
+ 	
+ 	if (pMulticastFilterTable == NULL)
+ 	{
+-		DBGPRINT(RT_DEBUG_ERROR, ("%s Multicase filter table is not ready.\n", __FUNCTION__));
++		DBGPRINT(RT_DEBUG_WARN, ("%s Multicase filter table is not ready.\n", __FUNCTION__));
+ 		return FALSE;
+ 	}
+ 
+@@ -226,7 +226,7 @@
+ 		{
+ 			if (MAC_ADDR_EQUAL(pMemberAddr, pMemberEntry->Addr))
+ 			{
+-				DBGPRINT(RT_DEBUG_ERROR, ("%s: already in Members list.\n", __FUNCTION__));
++				DBGPRINT(RT_DEBUG_WARN, ("%s: already in Members list.\n", __FUNCTION__));
+ 				return FALSE;
+ 			}
+ 
+@@ -398,7 +398,7 @@
+ 		}
+ 		else
+ 		{
+-			DBGPRINT(RT_DEBUG_ERROR, ("%s: the Group doesn't exist.\n", __FUNCTION__));
++			DBGPRINT(RT_DEBUG_WARN, ("%s: the Group doesn't exist.\n", __FUNCTION__));
+ 		}
+ 	} while(FALSE);
+ 

@@ -1,0 +1,37 @@
+diff -uNr a/rlt_wifi/ap/ap_apcli.c b/rlt_wifi/ap/ap_apcli.c
+--- a/rlt_wifi/ap/ap_apcli.c	2018-09-17 18:06:44.000000000 +0800
++++ b/rlt_wifi/ap/ap_apcli.c	2018-09-17 18:16:25.000000000 +0800
+@@ -2807,7 +2807,7 @@
+ 	if ((pSsidBssTab->BssNr == 0))
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("No match entry.\n"));
+-		Set_SiteSurvey_Proc(pAd, pCfgSsid);
++//		Set_SiteSurvey_Proc(pAd, pCfgSsid);
+ 		//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 	}
+ 	else if (pSsidBssTab->BssNr > 0 &&
+diff -uNr a/rlt_wifi/ap/ap_cfg.c b/rlt_wifi/ap/ap_cfg.c
+--- a/rlt_wifi/ap/ap_cfg.c	2016-05-26 17:22:14.000000000 +0800
++++ b/rlt_wifi/ap/ap_cfg.c	2018-09-17 18:03:51.000000000 +0800
+@@ -8924,8 +8924,8 @@
+ 	UCHAR ifIndex;
+ 
+ 	pObj = (POS_COOKIE) pAd->OS_Cookie;
+-	if (pObj->ioctl_if_type != INT_APCLI)
+-		return FALSE;
++//	if (pObj->ioctl_if_type != INT_APCLI)
++//		return FALSE;
+ 
+ 	ifIndex = pObj->ioctl_if;
+ 	Enable = simple_strtol(arg, 0, 16);
+@@ -9128,8 +9128,8 @@
+ 	POS_COOKIE pObj;
+ 
+ 	pObj = (POS_COOKIE) pAd->OS_Cookie;
+-	if (pObj->ioctl_if_type != INT_APCLI)
+-		return FALSE;
++//	if (pObj->ioctl_if_type != INT_APCLI)
++//		return FALSE;
+ 
+ 	ifIndex = pObj->ioctl_if;
+ 

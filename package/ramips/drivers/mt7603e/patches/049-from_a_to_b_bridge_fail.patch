@@ -1,0 +1,49 @@
+diff -uNr a/rlt_wifi/common/cmm_profile.c b/rlt_wifi/common/cmm_profile.c
+--- a/rlt_wifi/common/cmm_profile.c	2016-05-26 17:22:23.000000000 +0800
++++ b/rlt_wifi/common/cmm_profile.c	2018-09-17 16:58:30.000000000 +0800
+@@ -763,6 +763,23 @@
+ 		}
+ 	}
+ 
++	/*ApCliLockMac*/
++	if(RTMPGetKeyParameter("ApCliLockMac", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, FALSE))
++	{
++		for (i = 0, macptr = rstrtok(tmpbuf,";"); (macptr && i < MAX_APCLI_NUM); macptr = rstrtok(NULL,";"), i++)
++		{
++			pApCliEntry = &pAd->ApCfg.ApCliTab[i];
++			if ((strncmp(macptr, "0", 1) == 0))
++				pApCliEntry->LockMacEn = FALSE;
++			else if ((strncmp(macptr, "1", 1) == 0))
++				pApCliEntry->LockMacEn = TRUE;
++	        else
++				pApCliEntry->LockMacEn = FALSE;
++
++			DBGPRINT(RT_DEBUG_TRACE, ("ApCliEntry[%d].LockMacEn=%d\n", i, pApCliEntry->LockMacEn));
++	    }
++	}
++
+ 	/*ApCliBssid*/
+ 	if(RTMPGetKeyParameter("ApCliBssid", tmpbuf, MAX_PARAM_BUFFER_SIZE, buffer, TRUE))
+ 	{
+@@ -785,7 +802,7 @@
+ 			pApCliEntry->Valid = FALSE;/* it should be set when successfuley association*/
+ 		}
+ 	}
+-
++	
+ 	/*ApCliAuthMode*/
+ 	if (RTMPGetKeyParameter("ApCliAuthMode", tmpbuf, 255, buffer, TRUE))
+ 	{
+diff -uNr a/rlt_wifi/include/rtmp.h b/rlt_wifi/include/rtmp.h
+--- a/rlt_wifi/include/rtmp.h	2016-05-26 17:22:21.000000000 +0800
++++ b/rlt_wifi/include/rtmp.h	2018-09-17 16:49:22.000000000 +0800
+@@ -3039,7 +3039,8 @@
+ 
+ 	BOOLEAN Enable;		/* Set it as 1 if the apcli interface was configured to "1"  or by iwpriv cmd "ApCliEnable" */
+ 	BOOLEAN Valid;		/* Set it as 1 if the apcli interface associated success to remote AP. */
+-
++	BOOLEAN LockMacEn;
++	
+ 	MLME_AUX MlmeAux;			/* temporary settings used during MLME state machine */
+ 
+ 	UCHAR MacTabWCID;	/*WCID value, which point to the entry of ASIC Mac table. */

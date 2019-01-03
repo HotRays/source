@@ -1,0 +1,57 @@
+diff -uNr a/rlt_wifi/ap/ap_apcli.c b/rlt_wifi/ap/ap_apcli.c
+--- a/rlt_wifi/ap/ap_apcli.c	2016-05-26 17:22:14.000000000 +0800
++++ b/rlt_wifi/ap/ap_apcli.c	2018-09-17 16:25:16.000000000 +0800
+@@ -2745,6 +2745,9 @@
+ 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
+ 
+ 	ifIdx = pObj->ioctl_if;
++	if(pAd->ApCfg.ApCliTab[ifIdx].CtrlCurrState == APCLI_CTRL_CONNECTED)
++	return TRUE;
++
+ 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
+ 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
+ 	pScanTab = &pAd->ScanTab;
+@@ -2804,7 +2807,8 @@
+ 	if ((pSsidBssTab->BssNr == 0))
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("No match entry.\n"));
+-		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++		Set_SiteSurvey_Proc(pAd, pCfgSsid);
++		//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 	}
+ 	else if (pSsidBssTab->BssNr > 0 &&
+ 			pSsidBssTab->BssNr <=MAX_LEN_OF_BSS_TABLE)
+@@ -2902,7 +2906,8 @@
+ 	else
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("No candidate AP, the process is about to stop.\n"));
+-		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++		Set_SiteSurvey_Proc(pAd, pApCliEntry->CfgSsid);
++		//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 	}
+ 
+ 	Set_ApCli_Enable_Proc(pAd, "1");
+diff -uNr a/rlt_wifi/ap/ap_cfg.c b/rlt_wifi/ap/ap_cfg.c
+--- a/rlt_wifi/ap/ap_cfg.c	2016-05-26 17:22:14.000000000 +0800
++++ b/rlt_wifi/ap/ap_cfg.c	2018-09-17 16:21:45.000000000 +0800
+@@ -9633,7 +9633,7 @@
+ 	/*
+ 		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+ 	*/
+-	Set_SiteSurvey_Proc(pAd, "");//pApCfg->ApCliTab[ifIndex].CfgSsid);
++	Set_SiteSurvey_Proc(pAd, pApCfg->ApCliTab[ifIndex].CfgSsid);//pApCfg->ApCliTab[ifIndex].CfgSsid);
+ 
+ 	return TRUE;
+ }
+diff -uNr a/rlt_wifi/common/cmm_wpa.c b/rlt_wifi/common/cmm_wpa.c
+--- a/rlt_wifi/common/cmm_wpa.c	2016-05-26 17:22:23.000000000 +0800
++++ b/rlt_wifi/common/cmm_wpa.c	2018-09-17 16:16:55.000000000 +0800
+@@ -1746,7 +1746,7 @@
+ 				)
+ 			{
+ 				DBGPRINT(RT_DEBUG_TRACE, ("Apcli auto connected:PeerPairMsg3Action() \n"));
+-				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++				//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 			}
+ #endif /* APCLI_AUTO_CONNECT_SUPPORT */
+ #endif /* APLCI_SUPPORT */

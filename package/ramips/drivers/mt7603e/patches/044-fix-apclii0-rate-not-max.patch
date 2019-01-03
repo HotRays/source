@@ -1,0 +1,15 @@
+diff -uNr a/rlt_wifi/common/cmm_cfg.c b/rlt_wifi/common/cmm_cfg.c
+--- a/rlt_wifi/common/cmm_cfg.c	2016-05-26 17:22:24.000000000 +0800
++++ b/rlt_wifi/common/cmm_cfg.c	2018-09-17 16:07:41.000000000 +0800
+@@ -1311,8 +1311,10 @@
+ 			HTTRANSMIT_SETTING HtPhyMode;
+ 
+ #ifdef APCLI_SUPPORT
+-			if (pRate->priv_flags == INT_APCLI)
++			if (pRate->priv_flags == INT_APCLI) {
+ 				HtPhyMode = pAd->ApCfg.ApCliTab[pObj->ioctl_if].wdev.HTPhyMode;
++				MBSS_PHY_MODE_RESET(pObj->ioctl_if, HtPhyMode);
++			}
+ 			else
+ #endif /* APCLI_SUPPORT */
+ #ifdef WDS_SUPPORT

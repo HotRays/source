@@ -1,0 +1,14 @@
+diff -uNr a/rlt_wifi/common/cmm_cfg.c b/rlt_wifi/common/cmm_cfg.c
+--- a/rlt_wifi/common/cmm_cfg.c	2018-08-18 10:29:07.563114491 +0800
++++ b/rlt_wifi/common/cmm_cfg.c	2018-08-18 10:30:22.819220508 +0800
+@@ -1289,7 +1289,10 @@
+ 
+ #ifdef APCLI_SUPPORT
+ 			if (pRate->priv_flags == INT_APCLI)
++			{
+ 				memcpy(&HtPhyMode, &pAd->ApCfg.ApCliTab[pObj->ioctl_if].wdev.HTPhyMode, sizeof(HTTRANSMIT_SETTING));
++				MBSS_PHY_MODE_RESET(pObj->ioctl_if, HtPhyMode);
++			}
+ 			else
+ #endif /* APCLI_SUPPORT */
+ #ifdef WDS_SUPPORT
