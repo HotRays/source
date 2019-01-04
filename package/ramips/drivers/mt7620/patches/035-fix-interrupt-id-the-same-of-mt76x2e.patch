@@ -1,0 +1,12 @@
+diff -uNr a/src/include/iface/rtmp_rbs.h b/src/include/iface/rtmp_rbs.h
+--- a/src/include/iface/rtmp_rbs.h	2018-09-22 15:07:10.253122604 +0800
++++ b/src/include/iface/rtmp_rbs.h	2018-09-22 15:06:54.176947950 +0800
+@@ -38,7 +38,7 @@
+   *
+   ************************************************************************/  
+ 
+-#define RTMP_MAC_IRQ_NUM		4
++#define RTMP_MAC_IRQ_NUM		6
+ 
+ 
+ /*************************************************************************

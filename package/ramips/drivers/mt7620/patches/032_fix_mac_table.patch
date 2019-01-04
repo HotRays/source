@@ -1,0 +1,15 @@
+diff -uNr a/src/include/oid.h b/src/include/oid.h
+--- a/src/include/oid.h	2018-09-18 17:45:04.823064960 +0800
++++ b/src/include/oid.h	2018-09-18 17:46:47.612897981 +0800
+@@ -1151,7 +1151,10 @@
+ 	UINT32	DeviceNameLen;
+ #endif /* DPA_S */
+ //sync with other driver
+-	UINT32		LastRxRate;	
++	UINT32		LastRxRate;
++	UINT32 LastTxRate;
++	UINT32 ReRxRate;
++	UINT32 ReTxRate;
+ 	SHORT		StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
+ 	SHORT		SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */
+ /*	SHORT		TxPER;	*/					/* TX PER over the last second. Percent */

@@ -1,0 +1,84 @@
+diff -uNr a/build/Makefile b/build/Makefile
+--- a/build/Makefile	2018-11-07 19:38:20.248377196 +0800
++++ b/build/Makefile	2018-11-07 19:39:55.126380676 +0800
+@@ -420,6 +420,7 @@
+ 
+ ifeq ($(CONFIG_RT2860V2_AP_APCLI),y)
+ EXTRA_CFLAGS += -DAPCLI_SUPPORT
++EXTRA_CFLAGS += -DAPCLI_AUTO_CONNECT_SUPPORT
+ EXTRA_CFLAGS += -DMAT_SUPPORT
+ EXTRA_CFLAGS += -DAPCLI_CONNECTION_TRIAL
+ endif
+diff -uNr a/src/ap/ap_apcli.c b/src/ap/ap_apcli.c
+--- a/src/ap/ap_apcli.c	2018-11-07 19:35:23.149908589 +0800
++++ b/src/ap/ap_apcli.c	2018-11-07 19:28:48.702932397 +0800
+@@ -50,6 +50,7 @@
+ #ifdef APCLI_SUPPORT
+ 
+ #include "rt_config.h"
++#include "rtmp.h"
+ 
+ 
+ 
+@@ -2833,6 +2834,8 @@
+ 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
+ 
+ 	ifIdx = pObj->ioctl_if;
++	if(pAd->ApCfg.ApCliTab[ifIdx].CtrlCurrState == APCLI_CTRL_CONNECTED)
++		return TRUE;
+ 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
+ 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
+ 	pScanTab = &pAd->ScanTab;
+@@ -2892,7 +2895,8 @@
+ 	if ((pSsidBssTab->BssNr == 0))
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("No match entry.\n"));
+-		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++		Set_SiteSurvey_Proc(pAd, pCfgSsid);
++		//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 	}
+ 	else if (pSsidBssTab->BssNr > 0 &&
+ 			pSsidBssTab->BssNr <=MAX_LEN_OF_BSS_TABLE)
+@@ -2990,7 +2994,8 @@
+ 	else
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("No candidate AP, the process is about to stop.\n"));
+-		pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++		Set_SiteSurvey_Proc(pAd, pApCliEntry->CfgSsid);
++		//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 	}
+ 	
+ 	Set_ApCli_Enable_Proc(pAd, "1");
+diff -uNr a/src/ap/ap_cfg.c b/src/ap/ap_cfg.c
+--- a/src/ap/ap_cfg.c	2018-11-07 19:35:28.458415575 +0800
++++ b/src/ap/ap_cfg.c	2018-11-07 19:28:31.915251478 +0800
+@@ -449,6 +449,7 @@
+ 
+ #ifdef APCLI_SUPPORT
+ INT Set_ApCli_Enable_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
++INT Set_SiteSurvey_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
+ INT Set_ApCli_Ssid_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
+ INT Set_ApCli_Bssid_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
+ INT Set_ApCli_DefaultKeyID_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);
+@@ -10634,7 +10635,8 @@
+ 	/*
+ 		use site survey function to trigger auto connecting (when pAd->ApCfg.ApAutoConnectRunning == TRUE)
+ 	*/
+-	Set_SiteSurvey_Proc(pAd, "");//pApCfg->ApCliTab[ifIndex].CfgSsid);
++	//Set_SiteSurvey_Proc(pAd, "");//pApCfg->ApCliTab[ifIndex].CfgSsid);
++	Set_SiteSurvey_Proc(pAd, pApCfg->ApCliTab[ifIndex].CfgSsid);//pApCfg->ApCliTab[ifIndex].CfgSsid);
+ 
+ 	return TRUE;
+ }
+diff -uNr a/src/common/cmm_wpa.c b/src/common/cmm_wpa.c
+--- a/src/common/cmm_wpa.c	2018-11-07 19:35:17.893401609 +0800
++++ b/src/common/cmm_wpa.c	2018-11-07 19:29:37.634009710 +0800
+@@ -1597,7 +1597,7 @@
+ 				)
+ 			{
+ 				DBGPRINT(RT_DEBUG_TRACE, ("Apcli auto connected:PeerPairMsg3Action() \n"));
+-				pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
++				//pAd->ApCfg.ApCliAutoConnectRunning = FALSE;
+ 			}
+ #endif /* APCLI_AUTO_CONNECT_SUPPORT */
+ #endif /* APLCI_SUPPORT */

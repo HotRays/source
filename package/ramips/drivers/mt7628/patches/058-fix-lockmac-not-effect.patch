@@ -1,0 +1,50 @@
+diff -uNr b/src/chips/mt7628.c a/src/chips/mt7628.c
+--- b/src/chips/mt7628.c	2018-11-26 20:14:01.557756186 +0800
++++ a/src/chips/mt7628.c	2018-11-26 20:14:26.097338738 +0800
+@@ -73,7 +73,7 @@
+ 	doReload = (doCal1 & (0x1 << 7)) >> 7;
+ 	if (scan == FALSE)
+ 	{
+-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("reload DPD from flash , 0x9F = [%04x] doReload bit7[%x]\n", doCal1, doReload));
++		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("reload DPD from flash , 0x9F = [%04x] doReload bit7[%x]\n", doCal1, doReload));
+ 		/* reload DPD cal data from flash  , follow primary channel -by CSD */
+ 		CmdLoadDPDDataFromFlash(pAd, pAd->CommonCfg.Channel, doReload);  
+ 	}
+diff -uNr b/src/embedded/ap/ap_apcli.c a/src/embedded/ap/ap_apcli.c
+--- b/src/embedded/ap/ap_apcli.c	2018-11-26 20:12:10.827670744 +0800
++++ a/src/embedded/ap/ap_apcli.c	2018-11-26 20:12:03.115806159 +0800
+@@ -3065,7 +3065,9 @@
+ 
+ 		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
+ 							(pBssEntry->SsidLen) &&
+-							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
++							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE) &&
++							(MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR) ||
++							MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pBssEntry->Bssid)))
+ 		{
+ 			if (wdev->bWpaAutoMode == TRUE)
+ 	        {
+diff -uNr b/src/embedded/common/scan.c a/src/embedded/common/scan.c
+--- b/src/embedded/common/scan.c	2018-11-26 20:09:07.074986426 +0800
++++ a/src/embedded/common/scan.c	2018-11-26 20:10:55.485006729 +0800
+@@ -831,7 +831,7 @@
+ 
+ 					if (desiredSsidLen  > 0)
+ 					{
+-						MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("%s:: specific the %s scanning\n", __FUNCTION__, 
++						MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("%s:: specific the %s scanning\n", __FUNCTION__, 
+ 							pAd->ApCfg.ApCliTab[index].CfgSsid));
+ 
+ 						/* 1. backup the original MlmeAux */
+diff -uNr b/src/embedded/mcu/andes_mt.c a/src/embedded/mcu/andes_mt.c
+--- b/src/embedded/mcu/andes_mt.c	2018-11-26 20:09:20.702733428 +0800
++++ a/src/embedded/mcu/andes_mt.c	2018-11-26 20:11:25.076478463 +0800
+@@ -4621,7 +4621,7 @@
+ 		goto error;
+ 	}
+ 	
+-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, 
++	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, 
+ 	("%s: Channel = %d, DoReload = %d\n", __FUNCTION__, channel, doReload));
+ 
+ 	msg = AndesAllocCmdMsg(pAd, sizeof(CmdLoadDPD));

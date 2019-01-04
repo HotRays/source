@@ -1,0 +1,26 @@
+diff --git a/src/embedded/common/cmm_info.c b/src/embedded/common/cmm_info.c
+index d47e976..e19eacc 100644
+--- a/src/embedded/common/cmm_info.c
++++ b/src/embedded/common/cmm_info.c
+@@ -3456,6 +3456,7 @@ VOID RTMPIoctlGetMacTable(
+ 
+ #ifdef RTMP_RBUS_SUPPORT
+ 			pDst->LastRxRate = pEntry->LastRxRate;
++			pDst->LastTxRate = pEntry->LastTxRate;
+ /*			pDst->TxPER = pEntry->SaveTxPER; */
+ #endif /* RTMP_RBUS_SUPPORT */
+ 
+diff --git a/src/embedded/include/oid.h b/src/embedded/include/oid.h
+index 97b7d62..44b2bbc 100644
+--- a/src/embedded/include/oid.h
++++ b/src/embedded/include/oid.h
+@@ -1148,6 +1148,9 @@ typedef struct _RT_802_11_MAC_ENTRY {
+ 	UINT32 ConnectedTime;
+ 	MACHTTRANSMIT_SETTING TxRate;
+ 	UINT32 LastRxRate;
++	UINT32 LastTxRate;
++	UINT32 ReRxRate;
++	UINT32 ReTxRate;
+ #ifdef RTMP_RBUS_SUPPORT
+ 	SHORT StreamSnr[3];				/* BF SNR from RXWI. Units=0.25 dB. 22 dB offset removed */
+ 	SHORT SoundingRespSnr[3];			/* SNR from Sounding Response. Units=0.25 dB. 22 dB offset removed */

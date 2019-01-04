@@ -1,0 +1,44 @@
+diff --git a/rlt_wifi/common/cmm_data.c b/rlt_wifi/common/cmm_data.c
+index e3f41d3..701efb5 100644
+--- a/rlt_wifi/common/cmm_data.c
++++ b/rlt_wifi/common/cmm_data.c
+@@ -853,6 +853,7 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(
+ 	HTTRANSMIT_SETTING *transmit;
+ 	UINT8 TXWISize = pAd->chipCap.TXWISize;
+         UINT8 PrevMcs, PrevMode;
++	ULONG FreeNum;
+ #ifdef CONFIG_AP_SUPPORT
+ #ifdef SPECIFIC_TX_POWER_SUPPORT
+ 	UCHAR TxPwrAdj = 0;
+@@ -863,6 +864,11 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(
+ 
+ 	/* Make sure MGMT ring resource won't be used by other threads*/
+ 	RTMP_SEM_LOCK(&pAd->MgmtRingLock);
++	FreeNum = GET_MGMTRING_FREENO(pAd);
++	if (FreeNum <= 0)
++	{
++		return NDIS_STATUS_FAILURE;
++	}
+ 	if (pSrcBufVA == NULL)
+ 	{
+ 		/* The buffer shouldn't be NULL*/
+diff --git a/rlt_wifi/common/cmm_data_pci.c b/rlt_wifi/common/cmm_data_pci.c
+index ac1d21d..ded268d 100644
+--- a/rlt_wifi/common/cmm_data_pci.c
++++ b/rlt_wifi/common/cmm_data_pci.c
+@@ -1111,6 +1111,7 @@ VOID RTMPHandleMgmtRingDmaDoneInterrupt(RTMP_ADAPTER *pAd)
+ 		if (pPacket == NULL)
+ 		{
+ 			INC_RING_INDEX(pMgmtRing->TxSwFreeIdx, MGMT_RING_SIZE);
++			pTxD->DMADONE = 0;
+ 			continue;
+ 		}
+ 
+@@ -1157,6 +1158,7 @@ VOID RTMPHandleMgmtRingDmaDoneInterrupt(RTMP_ADAPTER *pAd)
+ 		RTMP_DCACHE_FLUSH(pMgmtRing->Cell[pAd->MgmtRing.TxSwFreeIdx].AllocPa, TXD_SIZE);
+ 
+ 		INC_RING_INDEX(pMgmtRing->TxSwFreeIdx, MGMT_RING_SIZE);
++		pTxD->DMADONE = 0;
+ 
+ #ifdef RT_BIG_ENDIAN
+ 		/* TxD no change. */

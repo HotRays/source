@@ -1,14 +1,12 @@
-diff -uNr a/rlt_wifi/common/rt_os_util.c b/rlt_wifi/common/rt_os_util.c
---- a/rlt_wifi/common/rt_os_util.c	2018-08-16 11:20:34.141779638 +0800
-+++ b/rlt_wifi/common/rt_os_util.c	2018-08-16 11:20:16.322345454 +0800
-@@ -51,6 +51,10 @@
- 			Antenna = (MCS / 10)+1;
- 			MCS_1NSS %= 10;
- 		}
-+                if(BW == 0)
-+                {
-+                        MCS_1NSS = 7;
-+                }
-         *pRate = RalinkRate_VHT_1NSS[BW][ShortGI][MCS_1NSS];
-     }
-     else
+diff -urN a/rlt_wifi/common/cmm_profile.c b/rlt_wifi/common/cmm_profile.c
+--- a/rlt_wifi/common/cmm_profile.c	2018-10-16 17:30:20.786293165 +0800
++++ b/rlt_wifi/common/cmm_profile.c	2018-10-16 17:33:09.390239028 +0800
+@@ -4938,7 +4938,7 @@
+ UINT32 RalinkRate_VHT_1NSS[Rate_BW_MAX][Rate_GI_MAX][Rate_MCS] = 
+ {
+ 	{
+-		{13,  26,  39, 52,  78,  104, 117, 130, 156,  0} , {14,  29,  43,  57,  87, 115, 130, 144, 173,   0}      /*20MHz, 800ns & 400 ns GI, MCS0~9*/
++		{13,  26,  39, 52,  78,  104, 117, 130, 156, 156} , {14,  29,  43,  57,  87, 115, 130, 144, 173, 173}      /*20MHz, 800ns & 400 ns GI, MCS0~9*/
+ 	},
+ 	{
+ 		{27,  54,  81, 108, 162, 216, 243, 270, 324, 360}, {30,  60,  90, 120, 180, 240, 270, 300, 360, 400}	 /*40MHz, 800ns & 400 ns GI, MCS0~9*/

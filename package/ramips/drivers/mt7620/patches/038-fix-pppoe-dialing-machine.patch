@@ -1,0 +1,31 @@
+diff --git a/src/common/cmm_mat_pppoe.c b/src/common/cmm_mat_pppoe.c
+index 568e944..1c8a935 100644
+--- a/src/common/cmm_mat_pppoe.c
++++ b/src/common/cmm_mat_pppoe.c
+@@ -800,7 +800,7 @@ static PUCHAR MATProto_PPPoEDis_Tx(
+ 	IN PUCHAR 			pLayerHdr,
+ 	IN PUCHAR			pDevMacAdr)
+ {
+-	PUCHAR pData, pTagContent = NULL, pPayloadLen, pPPPPoETail;
++	PUCHAR pData, pTagContent = NULL, pPayloadLen/*, pPPPPoETail*/;
+ 	PUCHAR pSrcMac, pDstMac;
+ 	UINT16 payloadLen, leftLen, offset;
+ 	UINT16 tagID, tagLen =0;
+@@ -892,7 +892,8 @@ static PUCHAR MATProto_PPPoEDis_Tx(
+ 
+ 	/* Now update our pppoe discovery table "UidMacTable" */
+ 	pEntry  = UidMacTableUpdate(pMatStruct, pSrcMac, pDstMac, pTagContent, tagLen, isServer);
+-	
++
++#if 0
+ 	if (pEntry && (pTagContent == NULL))
+ 	{
+ 		PUCHAR tailHead;
+@@ -938,6 +939,7 @@ static PUCHAR MATProto_PPPoEDis_Tx(
+ 			*(UINT16 *)pPayloadLen = OS_HTONS(payloadLen + 4 + PPPOE_DIS_UID_LEN);
+ 		}
+ 	}
++#endif
+ 
+ 	if (needUpdateSesTb)
+ 		SesMacTableUpdate(pMatStruct, pSrcMac, sesID, pDstMac);

@@ -1,0 +1,28 @@
+diff --git a/build/Makefile b/build/Makefile
+index 229c1eb..7b62a41 100755
+--- a/build/Makefile
++++ b/build/Makefile
+@@ -1,19 +1,13 @@
++CONFIG_RALINK_MT7628=y
+ 
+-ifeq ($(CONFIG_SUPPORT_OPENWRT),y)
+-EXTRA_CFLAGS = -I$(src)/../src/include \
++EXTRA_CFLAGS = -DCONFIG_SUPPORT_OPENWRT
++
++EXTRA_CFLAGS += -I$(src)/../src/include \
+ 				-I$(src)/../src/embedded/include \
+ 				-I$(src)/../src/ate/include
+ DRV_NAME = mt7628
+ SRC_DIR = ../src/embedded
+ obj-m += $(DRV_NAME).o
+-else
+-EXTRA_CFLAGS = -Idrivers/net/wireless/mt_wifi/include \
+-				-Idrivers/net/wireless/mt_wifi/embedded/include \
+-				-Idrivers/net/wireless/mt_wifi/ate/include
+-DRV_NAME = mt_wifi
+-SRC_DIR = ../mt_wifi/embedded
+-obj-$(CONFIG_MT7628_AP_SUPPORT) += $(DRV_NAME).o
+-endif
+ 
+ ########################################################
+ # Common files

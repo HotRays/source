@@ -6,8 +6,8 @@
 
 usage() {
 	cat <<EOF
-Usage: $0 [config|down|reload|status]
-enables (default), disables or configures devices not yet configured.
+Usage: $0 [down|detect|reload|status]
+enables (default), disables or detects a wifi configuration.
 EOF
 	exit 1
 }
@@ -108,7 +108,7 @@ wifi_fixup_hwmode() {
 _wifi_updown() {
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
-		[ "$disabled" = "1" ] && {
+		[ 1 == "$disabled" ] && {
 			echo "'$device' is disabled"
 			set disable
 		}
@@ -145,16 +145,8 @@ wifi_reload() {
 	wifi_reload_legacy
 }
 
-wifi_detect_notice() {
-	>&2 echo "WARNING: Wifi detect is deprecated. Use wifi config instead"
-	>&2 echo "For more information, see commit 5f8f8a366136a07df661e31decce2458357c167a"
-	exit 1
-}
-
-wifi_config() {
-	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
-
-	for driver in $DRIVERS; do (
+wifi_detect() {
+	for driver in ${2:-$DRIVERS}; do (
 		if eval "type detect_$driver" 2>/dev/null >/dev/null; then
 			eval "detect_$driver" || echo "$driver: Detect failed" >&2
 		else
@@ -182,7 +174,7 @@ set_wifi_up() {
 	local cfg="$1"
 	local ifname="$2"
 	uci_set_state wireless "$cfg" up 1
-	uci_set_state wireless "$cfg" ifname "$ifname"
+	#uci_set_state wireless "$cfg" ifname "$ifname"
 }
 
 set_wifi_down() {
@@ -235,8 +227,7 @@ scan_wifi
 
 case "$1" in
 	down) wifi_updown "disable" "$2";;
-	detect) wifi_detect_notice ;;
-	config) wifi_config ;;
+	detect) wifi_detect "$2";;
 	status) ubus_wifi_cmd "status" "$2";;
 	reload) wifi_reload "$2";;
 	reload_legacy) wifi_reload_legacy "$2";;

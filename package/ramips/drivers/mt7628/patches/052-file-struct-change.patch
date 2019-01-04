@@ -1,0 +1,13 @@
+diff --git a/src/embedded/os/linux/rt_profile.c b/src/embedded/os/linux/rt_profile.c
+index 1a0351e..74ba2ac 100644
+--- a/src/embedded/os/linux/rt_profile.c
++++ b/src/embedded/os/linux/rt_profile.c
+@@ -236,7 +236,7 @@ NDIS_STATUS	RTMPReadParametersHook(RTMP_ADAPTER *pAd)
+ 		{
+ #ifndef OS_ABL_SUPPORT
+ 			// TODO: need to roll back when convert into OSABL code
+-				 fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
++				fsize = (ULONG)srcf->f_path.dentry->d_inode->i_size;
+ 				if (buf_size < (fsize + 1))
+ 					buf_size = fsize + 1;
+ #endif /* OS_ABL_SUPPORT */

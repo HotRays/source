@@ -1,0 +1,90 @@
+Index: mt7628/src/embedded/ap/ap_apcli.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_apcli.c	2017-01-06 19:14:38.000000000 +0800
++++ mt7628/src/embedded/ap/ap_apcli.c	2017-01-06 19:17:31.000000000 +0800
+@@ -3033,19 +3033,9 @@
+ 
+ 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("---> ApCliAutoConnectExec()\n"));
+ 
+-	for(ifIdx=0; ifIdx<MAX_APCLI_NUM; ifIdx++)
+-	{
+-		if (pAd->ApCfg.ApCliTab[ifIdx].AutoConnectFlag== TRUE)
+-			break;
+-	}
+-
+-	if(ifIdx >= MAX_APCLI_NUM)
+-	{
+-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Error  ifIdx=%d \n", ifIdx));
+-		return FALSE;
+-	}
++	/* apcli interface support only one, need to fix for multi apcli? */
++	ifIdx = 0;
+ 
+-	//ifIdx = pObj->ioctl_if;
+ 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
+ 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
+ 	pScanTab = &pAd->ScanTab;
+@@ -3174,23 +3164,14 @@
+ 	//POS_COOKIE  	pObj = (POS_COOKIE) pAd->OS_Cookie;
+ 	BSS_TABLE 		*pSsidBssTab;
+ 	PAPCLI_STRUCT	pApCliEntry;
+-	UCHAR			lastEntryIdx, ifIdx ;
++	/* apcli interface support only one, need to fix for multi apcli? */
++	UCHAR			lastEntryIdx, ifIdx = 0;
+ 
+ 	if (pAd->ScanCtrl.PartialScan.bScanning == TRUE)
+ 		return;
+ 
+ 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("---> ApCliSwitchCandidateAP()\n"));
+-	for(ifIdx=0; ifIdx<MAX_APCLI_NUM; ifIdx++)
+-	{
+-		if (pAd->ApCfg.ApCliTab[ifIdx].AutoConnectFlag== TRUE)
+-			break;
+-	}
+-
+-	if(ifIdx >= MAX_APCLI_NUM)
+-	{
+-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("Error  ifIdx=%d \n", ifIdx));
+-		return ;
+-	}
++	
+ 	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
+ 	pSsidBssTab = &pApCliEntry->MlmeAux.SsidBssTab;
+ 
+Index: mt7628/src/embedded/ap/ap_cfg.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_cfg.c	2017-01-06 19:14:54.000000000 +0800
++++ mt7628/src/embedded/ap/ap_cfg.c	2017-01-06 19:19:05.000000000 +0800
+@@ -10421,7 +10421,6 @@
+ 		return TRUE;
+ 	}
+ 
+-	pApCfg->ApCliTab[ifIndex].AutoConnectFlag = TRUE;
+ 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("I/F(apcli%d) Set_ApCli_AutoConnect_Proc::(Len=%d,Ssid=%s)\n",
+ 			ifIndex, pApCfg->ApCliTab[ifIndex].CfgSsidLen, pApCfg->ApCliTab[ifIndex].CfgSsid));
+ 
+Index: mt7628/src/embedded/ap/apcli_ctrl.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/apcli_ctrl.c	2017-01-06 19:15:30.000000000 +0800
++++ mt7628/src/embedded/ap/apcli_ctrl.c	2017-01-06 19:20:28.000000000 +0800
+@@ -727,7 +727,7 @@
+ 		if (pAd->ApCfg.ApCliAutoConnectRunning == TRUE)
+ 			ApCliSwitchCandidateAP(pAd);
+ 			
+-		if ((pAd->ApCfg.ApCliAutoConnectRunning == FALSE) && (pAd->ApCfg.ApCliTab[ifIndex].AutoConnectFlag == TRUE)) 
++		if (pAd->ApCfg.ApCliAutoConnectRunning == FALSE) 
+ 		{
+ 			NDIS_802_11_SSID Ssid;
+ 			NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
+Index: mt7628/src/embedded/include/rtmp.h
+===================================================================
+--- mt7628.orig/src/embedded/include/rtmp.h	2017-01-06 19:15:13.000000000 +0800
++++ mt7628/src/embedded/include/rtmp.h	2017-01-06 19:18:28.000000000 +0800
+@@ -3547,7 +3547,6 @@
+ 
+ #ifdef APCLI_AUTO_CONNECT_SUPPORT
+ 		USHORT	ProbeReqCnt;
+-	BOOLEAN AutoConnectFlag;
+ #endif /* APCLI_AUTO_CONNECT_SUPPORT */
+ 	USHORT AuthReqCnt;
+ 	USHORT AssocReqCnt;

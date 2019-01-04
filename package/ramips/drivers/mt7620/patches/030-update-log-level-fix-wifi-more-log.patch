@@ -1,0 +1,33 @@
+diff -uNr a/src/common/cmm_profile.c b/src/common/cmm_profile.c
+--- a/src/common/cmm_profile.c	2018-09-15 19:47:07.944069721 +0800
++++ b/src/common/cmm_profile.c	2018-09-15 19:49:31.473605549 +0800
+@@ -589,7 +589,7 @@
+ 	    ((KeyType == 0) && (KeyLen != 10) && (KeyLen != 26)) ||
+ 	    ((KeyType== 1) && (KeyLen != 5) && (KeyLen != 13)))
+ 	{
+-		DBGPRINT(RT_DEBUG_ERROR, ("Key%dStr is Invalid key length(%ld) or Type(%ld)\n", 
++		DBGPRINT(RT_DEBUG_TRACE, ("Key%dStr is Invalid key length(%ld) or Type(%ld)\n", 
+ 								KeyIdx+1, KeyLen, KeyType));
+ 		return FALSE;
+ 	}
+@@ -1467,7 +1467,7 @@
+ 			{
+ 				pAd->ApCfg.MBSSID[i].UapsdInfo.bAPSDCapable =
+ 							pAd->ApCfg.MBSSID[0].UapsdInfo.bAPSDCapable;
+-				DBGPRINT(RT_DEBUG_ERROR, ("APSDCapable[%d]=%d\n", i,
++				DBGPRINT(RT_DEBUG_TRACE, ("APSDCapable[%d]=%d\n", i,
+ 						pAd->ApCfg.MBSSID[i].UapsdInfo.bAPSDCapable));
+ 			}
+ 		}
+diff -uNr a/src/common/rtmp_init.c b/src/common/rtmp_init.c
+--- a/src/common/rtmp_init.c	2018-09-15 19:44:58.022651260 +0800
++++ b/src/common/rtmp_init.c	2018-09-15 19:45:23.102122513 +0800
+@@ -4212,7 +4212,7 @@
+ 	{
+ 		pObj->pRscObj = pRsc;
+ 		insertTailList(pRscList, (LIST_ENTRY *)pObj);
+-		DBGPRINT(RT_DEBUG_ERROR, ("%s: add timer obj %lx!\n", __FUNCTION__, (ULONG)pRsc));
++		//DBGPRINT(RT_DEBUG_ERROR, ("%s: add timer obj %lx!\n", __FUNCTION__, (ULONG)pRsc));
+ 	}
+ }
+ 

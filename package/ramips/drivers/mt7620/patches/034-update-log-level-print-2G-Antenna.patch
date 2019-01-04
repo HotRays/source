@@ -1,0 +1,12 @@
+diff -uNr a/src/common/cmm_sync.c b/src/common/cmm_sync.c
+--- a/src/common/cmm_sync.c	2018-09-21 20:32:37.788188347 +0800
++++ b/src/common/cmm_sync.c	2018-09-21 20:33:24.060344911 +0800
+@@ -279,7 +279,7 @@
+ #ifdef DBG	
+ 	for (i=0;i<pAd->ChannelListNum;i++)
+ 	{
+-		DBGPRINT_RAW(RT_DEBUG_TRACE,("BuildChannel # %d :: Pwr0 = %d, Pwr1 =%d, Flags = %x\n ", 
++		DBGPRINT_RAW(RT_DEBUG_ERROR,("BuildChannel # %d :: Pwr0 = %d, Pwr1 =%d, Flags = %x\n ", 
+ 									 pAd->ChannelList[i].Channel, 
+ 									 pAd->ChannelList[i].Power, 
+ 									 pAd->ChannelList[i].Power2, 

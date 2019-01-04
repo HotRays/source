@@ -1,0 +1,13 @@
+diff --git a/src/embedded/include/iface/rtmp_rbs.h b/src/embedded/include/iface/rtmp_rbs.h
+index 3fe7b5d..55e2d43 100644
+--- a/src/embedded/include/iface/rtmp_rbs.h
++++ b/src/embedded/include/iface/rtmp_rbs.h
+@@ -35,7 +35,7 @@
+   *
+   ************************************************************************/
+ 
+-#define RTMP_MAC_IRQ_NUM		4
++#define RTMP_MAC_IRQ_NUM		6
+ 
+ 
+ /*************************************************************************

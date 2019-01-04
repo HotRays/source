@@ -1,0 +1,21 @@
+diff -uNr a/src/os/linux/rt_linux.c b/src/os/linux/rt_linux.c
+--- a/src/os/linux/rt_linux.c	2018-09-18 10:35:05.568583798 +0800
++++ b/src/os/linux/rt_linux.c	2018-09-18 10:34:38.840554596 +0800
+@@ -321,7 +321,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_read_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }
+@@ -337,7 +337,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_write_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }

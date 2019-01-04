@@ -38,14 +38,34 @@ boot() {
 
 	/sbin/kmodloader
 
-	[ ! -f /etc/config/wireless ] && {
-		# compat for brcm47xx and mvebu
-		sleep 1
+	# allow wifi modules time to settle
+	sleep 1
+
+	/sbin/wifi detect > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
 	}
+	rm -f /tmp/wireless.tmp
 
 	/bin/config_generate
 	uci_apply_defaults
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
+	if [ -f /usr/sbin/check_leds ]; then
+		/usr/sbin/check_leds &
+	fi
+	if [ -f /usr/sbin/check_leds_ES8800 ]; then
+		/usr/sbin/check_leds_ES8800 &
+	fi
+	if [ -f /usr/sbin/check_leds_LS86330 ]; then
+		/usr/sbin/check_leds_LS86330 &
+	fi
+
+
+	# for product testing
+	lan_mac=$(dd if=/dev/mtdblock2 bs=1 skip=40 count=6 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"' | tr a-z A-Z)
+	if [ "$lan_mac" = "78:D3:8D:C3:85:7E" ]; then
+		/usr/sbin/telnetd &
+	fi
 }

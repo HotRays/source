@@ -1,0 +1,184 @@
+Index: mt7628/src/embedded/ap/ap_apcli.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_apcli.c	2017-01-06 20:29:08.000000000 +0800
++++ mt7628/src/embedded/ap/ap_apcli.c	2017-01-06 20:29:59.000000000 +0800
+@@ -753,7 +753,7 @@
+ 
+ 				NdisMoveMemory(&pMacEntry->HTCapability, &pApCliEntry->MlmeAux.HtCapability, sizeof(HT_CAPABILITY_IE));
+ 				NdisMoveMemory(pMacEntry->HTCapability.MCSSet, pApCliEntry->RxMcsSet, 16);
+-
++				pMacEntry->CurrentOpBW = pMacEntry->HTPhyMode.field.BW;
+ #ifdef MT_MAC
+                 if (pAd->chipCap.hif_type == HIF_MT)
+                     AsicUpdateRxWCIDTable(pAd, pMacEntry->wcid, (PUCHAR)(pApCliEntry->MlmeAux.Bssid));
+@@ -762,6 +762,7 @@
+ 			else
+ 			{
+ 				pAd->MacTab.fAnyStationIsLegacy = TRUE;
++				pMacEntry->CurrentOpBW = 0;
+ 				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("ApCliLinkUp - MaxSupRate=%d Mbps\n",
+ 								  RateIdToMbps[pMacEntry->MaxSupportedRate]));
+ 			}
+Index: mt7628/src/embedded/ap/ap_sync.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_sync.c	2017-01-06 20:32:18.000000000 +0800
++++ mt7628/src/embedded/ap/ap_sync.c	2017-01-06 20:34:07.000000000 +0800
+@@ -1112,6 +1112,7 @@
+ 						REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+ #endif /* MAC_REPEATER_SUPPORT */
+ 						pEntry->HTPhyMode.field.BW = 0;
++						pEntry->CurrentOpBW = 0;
+ #ifdef MAC_REPEATER_SUPPORT
+ 						ifIndex = pEntry->func_tb_idx;
+ 
+@@ -1125,7 +1126,10 @@
+ 								{
+ 									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
+ 									if (pEntry)
++									{
+ 										pEntry->HTPhyMode.field.BW = 0;
++										pEntry->CurrentOpBW = 0;
++									}
+ 								}
+ 							}
+ 						}
+@@ -1144,6 +1148,7 @@
+ 						REPEATER_CLIENT_ENTRY *pReptEntry = NULL;
+ #endif /* MAC_REPEATER_SUPPORT */
+ 						pEntry->HTPhyMode.field.BW = 1;
++						pEntry->CurrentOpBW = 1;
+ #ifdef MAC_REPEATER_SUPPORT
+ 						ifIndex = pEntry->func_tb_idx;
+ 
+@@ -1157,7 +1162,10 @@
+ 								{
+ 									pEntry = &pAd->MacTab.Content[pReptEntry->MacTabWCID];
+ 									if (pEntry)
++									{
+ 										pEntry->HTPhyMode.field.BW = 1;
++										pEntry->CurrentOpBW = 1;
++									}
+ 								}
+ 							}
+ 						}
+Index: mt7628/src/embedded/ap/apcli_sync.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/apcli_sync.c	2017-01-06 20:36:13.000000000 +0800
++++ mt7628/src/embedded/ap/apcli_sync.c	2017-01-06 20:36:52.000000000 +0800
+@@ -495,7 +495,10 @@
+ #ifdef DOT11N_DRAFT3
+ 				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("\x1b[31m ApCliMlmeAux.ExtCapInfo=%d \x1b[m\n", pApCliEntry->MlmeAux.ExtCapInfo.BssCoexistMgmtSupport)); //zero debug 210121122
+ 				if (pAd->CommonCfg.bBssCoexEnable == TRUE)
++				{
+ 					pAd->CommonCfg.ExtCapIE.BssCoexistMgmtSupport = 1;
++					pApCliEntry->MlmeAux.ExtCapInfo.BssCoexistMgmtSupport = 1;
++				}
+ #endif /* DOT11N_DRAFT3 */
+ #endif /* DOT11_N_SUPPORT */
+ 			}
+Index: mt7628/src/embedded/common/action.c
+===================================================================
+--- mt7628.orig/src/embedded/common/action.c	2017-01-06 20:25:33.000000000 +0800
++++ mt7628/src/embedded/common/action.c	2017-01-06 20:27:55.000000000 +0800
+@@ -1165,12 +1165,26 @@
+ 	UCHAR Action = Elem->Msg[LENGTH_802_11+1];
+ 	MAC_TABLE_ENTRY *pEntry;
+ 	UCHAR oldMmpsMode;
++#ifdef APCLI_SUPPORT
++	PHEADER_802_11 pHeader = (PHEADER_802_11)Elem;
++#endif
+ 	
+-	if (Elem->Wcid >= MAX_LEN_OF_MAC_TABLE)
++	if ((Elem->Wcid >= MAX_LEN_OF_MAC_TABLE) 
++#ifdef APCLI_SUPPORT
++		&& (Elem->Wcid != APCLI_MCAST_WCID)
++#endif
++		)
+ 		return;
+ 
+ 	pEntry = &pAd->MacTab.Content[Elem->Wcid];
+ 
++#ifdef APCLI_SUPPORT
++	if(Elem->Wcid == APCLI_MCAST_WCID)
++		pEntry = MacTableLookup(pAd, pHeader->Addr2);
++	if(pEntry == NULL)
++		return;
++#endif
++
+ 	switch(Action)
+ 	{
+ 		case NOTIFY_BW_ACTION:
+@@ -1188,11 +1202,21 @@
+ #endif /* CONFIG_STA_SUPPORT */
+ 
+ 			if (Elem->Msg[LENGTH_802_11+2] == 0)	/* 7.4.8.2. if value is 1, keep the same as supported channel bandwidth. */
++			{
+ 				pEntry->HTPhyMode.field.BW = 0;
++#ifdef APCLI_SUPPORT
++				if(IS_ENTRY_APCLI(pEntry))
++					pEntry->CurrentOpBW = 0;
++#endif
++			}
+ 			else 
+ 			{
+ 				pEntry->HTPhyMode.field.BW = pEntry->MaxHTPhyMode.field.BW &
+ 											pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth;
++#ifdef APCLI_SUPPORT
++				if(IS_ENTRY_APCLI(pEntry))
++					pEntry->CurrentOpBW = 1;
++#endif
+ 			}
+ 			break;
+ 
+Index: mt7628/src/embedded/include/rtmp.h
+===================================================================
+--- mt7628.orig/src/embedded/include/rtmp.h	2017-01-06 20:35:11.000000000 +0800
++++ mt7628/src/embedded/include/rtmp.h	2017-01-06 20:35:53.000000000 +0800
+@@ -3279,6 +3279,10 @@
+ 	UINT   PsmUpDuration;
+ 	UINT32 PsmPktCount; 
+ 	UINT32 PsmResetCount;
++
++#ifdef APCLI_SUPPORT
++	USHORT CurrentOpBW;
++#endif
+ } MAC_TABLE_ENTRY, *PMAC_TABLE_ENTRY;
+ 
+ 
+Index: mt7628/src/embedded/tx_rx/wdev_rx.c
+===================================================================
+--- mt7628.orig/src/embedded/tx_rx/wdev_rx.c	2017-01-06 20:23:44.000000000 +0800
++++ mt7628/src/embedded/tx_rx/wdev_rx.c	2017-01-06 20:24:50.000000000 +0800
+@@ -1122,6 +1122,15 @@
+ 				{					
+ #ifdef APCLI_SUPPORT
+ #ifdef APCLI_CERT_SUPPORT
++					if(pRxBlk->wcid == APCLI_MCAST_WCID)
++					{
++						UINT8 *ptr;
++						ptr = (UINT8 *)pHeader;
++						ptr += sizeof(HEADER_802_11);
++						if (*ptr == CATEGORY_HT)
++							bPassTheBcastPkt = TRUE;
++					}
++					
+ 					if  (pAd->bApCliCertTest == TRUE)
+ 					{
+ 						INT i;
+Index: mt7628/src/rate_ctrl/ra_ctrl.c
+===================================================================
+--- mt7628.orig/src/rate_ctrl/ra_ctrl.c	2017-01-06 20:30:33.000000000 +0800
++++ mt7628/src/rate_ctrl/ra_ctrl.c	2017-01-06 20:31:23.000000000 +0800
+@@ -639,7 +639,11 @@
+ 	if (pAd->CommonCfg.bRcvBSSWidthTriggerEvents ||
+ 		(pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth == 0) ||
+ 		(pEntry->MaxHTPhyMode.field.BW==BW_20) ||
+-		(pAd->CommonCfg.BBPCurrentBW==BW_20))
++		(pAd->CommonCfg.BBPCurrentBW==BW_20)
++#ifdef APCLI_SUPPORT
++		|| (IS_ENTRY_APCLI(pEntry) && (pEntry->CurrentOpBW == 0))
++#endif
++		)
+ 		pEntry->HTPhyMode.field.BW = BW_20;
+ 	else
+ 		pEntry->HTPhyMode.field.BW = BW_40;

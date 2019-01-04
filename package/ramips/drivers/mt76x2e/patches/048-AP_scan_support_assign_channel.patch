@@ -1,0 +1,289 @@
+diff -urN a/rlt_wifi/ap/ap_cfg.c b/rlt_wifi/ap/ap_cfg.c
+--- a/rlt_wifi/ap/ap_cfg.c	2018-10-09 19:09:10.679409621 +0800
++++ b/rlt_wifi/ap/ap_cfg.c	2018-10-09 19:13:54.063251723 +0800
+@@ -385,6 +385,10 @@
+ 	IN	PRTMP_ADAPTER	pAd, 
+ 	IN	PSTRING			arg);
+ 
++INT Set_SiteSurveyChannel_Proc(
++	IN	PRTMP_ADAPTER	pAd, 
++	IN	PSTRING			arg);
++
+ #ifdef CUSTOMER_DCC_FEATURE
+ INT Set_ApScan_Proc(
+ 	IN	PRTMP_ADAPTER	pAd,
+@@ -935,6 +939,7 @@
+ #ifdef AP_SCAN_SUPPORT
+ 	{"SiteSurvey",					Set_SiteSurvey_Proc},
+ 	{"AutoChannelSel",				Set_AutoChannelSel_Proc},
++	{"SiteSurveyChannel",			Set_SiteSurveyChannel_Proc},
+ #ifdef CUSTOMER_DCC_FEATURE
+ 	{"ApScanChannel",				Set_ApScan_Proc},
+ 	{"ApDisableSTAConnect",			Set_ApDisableSTAConnect_Proc},
+diff -urN a/rlt_wifi/ap/ap_sync.c b/rlt_wifi/ap/ap_sync.c
+--- a/rlt_wifi/ap/ap_sync.c	2018-10-09 19:09:52.199385312 +0800
++++ b/rlt_wifi/ap/ap_sync.c	2018-10-10 16:17:54.954174579 +0800
+@@ -1442,7 +1442,6 @@
+ VOID APScanTimeoutAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
+ {
+ #ifdef CONFIG_AP_SUPPORT
+-#ifdef CUSTOMER_DCC_FEATURE
+ 	if(pAd->MlmeAux.ScanGivenChannel == TRUE)
+ 	{
+ 		pAd->MlmeAux.Channel = 0;
+@@ -1450,7 +1449,6 @@
+ 	}
+ 	else
+ #endif
+-#endif
+ #ifdef AP_PARTIAL_SCAN_SUPPORT
+ 	pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, pAd->MlmeAux.Channel);
+ #else
+@@ -1531,8 +1529,8 @@
+ 	BOOLEAN Cancelled;
+ 	UCHAR Ssid[MAX_LEN_OF_SSID], SsidLen, ScanType, BssType;
+ #ifdef CONFIG_AP_SUPPORT
+-#ifdef CUSTOMER_DCC_FEATURE
+ 	UINT Channel = 0;
++#ifdef CUSTOMER_DCC_FEATURE
+ 	UINT Timeout = 0;
+ #endif
+ #endif
+@@ -1544,7 +1542,7 @@
+ #ifdef CUSTOMER_DCC_FEATURE
+ 	if (MlmeScanReqSanity(pAd, Elem->Msg, Elem->MsgLen, &BssType, (PCHAR)Ssid, &SsidLen, &ScanType, &Channel, &Timeout))
+ #else
+-	if (MlmeScanReqSanity(pAd, Elem->Msg, Elem->MsgLen, &BssType, (PCHAR)Ssid, &SsidLen, &ScanType))
++	if (MlmeScanReqSanity(pAd, Elem->Msg, Elem->MsgLen, &BssType, (PCHAR)Ssid, &SsidLen, &ScanType, &Channel))
+ #endif
+ 	{
+ 		DBGPRINT(RT_DEBUG_TRACE, ("AP SYNC - MlmeScanReqAction\n"));
+@@ -1560,14 +1558,15 @@
+ #ifdef CUSTOMER_DCC_FEATURE
+ 		pAd->MlmeAux.ScanGivenChannel = FALSE;
+ 		pAd->MlmeAux.ScanTime = Timeout;
++#endif
+ 		if( Channel != 0)
+ 		{
+ 			pAd->MlmeAux.Channel = Channel;
+ 			pAd->MlmeAux.ScanGivenChannel = TRUE;
+ 		}
+ 		else
+-#endif
+ 		{
++			pAd->MlmeAux.ScanGivenChannel = FALSE;
+ 			/* start from the first channel */
+ #ifdef AP_PARTIAL_SCAN_SUPPORT
+ 			pAd->MlmeAux.Channel = RTMPFindScanChannel(pAd, 0);
+@@ -1866,6 +1865,51 @@
+ 	}
+     ScanReq.BssType = BSS_ANY;
+     ScanReq.ScanType = ScanType;
++	ScanReq.Channel = 0;
++    pAd->ApCfg.bAutoChannelAtBootup = ChannelSel;
++    
++    MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
++    RTMP_MLME_HANDLER(pAd);
++}
++
++VOID ApSiteSurveyChannel(
++	IN	PRTMP_ADAPTER			pAd,
++	IN	UINT				channel,
++	IN	UCHAR				ScanType,
++	IN	BOOLEAN				ChannelSel)
++{
++	MLME_SCAN_REQ_STRUCT    ScanReq;
++
++	if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
++	{
++		/*	
++		* Still scanning, ignore this scan.
++		*/
++		DBGPRINT(RT_DEBUG_TRACE, ("ApSiteSurvey:: Scanning now\n"));
++		return;
++	}
++
++	AsicDisableSync(pAd);
++
++#ifdef AP_PARTIAL_SCAN_SUPPORT
++	if (((pAd->ApCfg.bPartialScanning == TRUE) && (pAd->ApCfg.LastPartialScanChannel == 0)) ||
++		(pAd->ApCfg.bPartialScanning == FALSE))
++#endif /* AP_PARTIAL_SCAN_SUPPORT */
++	{
++		BssTableInit(&pAd->ScanTab);
++	}
++#ifdef CUSTOMER_DCC_FEATURE
++	ChannelInfoResetNew(pAd);
++	RTMPZeroMemory(&ScanReq, sizeof(ScanReq));
++#endif
++	pAd->Mlme.ApSyncMachine.CurrState = AP_SYNC_IDLE;
++
++	RTMPZeroMemory(ScanReq.Ssid, MAX_LEN_OF_SSID);
++
++	ScanReq.SsidLen = 0;
++    ScanReq.BssType = BSS_ANY;
++    ScanReq.ScanType = ScanType;
++	ScanReq.Channel = channel;
+     pAd->ApCfg.bAutoChannelAtBootup = ChannelSel;
+     
+     MlmeEnqueue(pAd, AP_SYNC_STATE_MACHINE, APMT2_MLME_SCAN_REQ, sizeof(MLME_SCAN_REQ_STRUCT), &ScanReq, 0);
+diff -urN a/rlt_wifi/common/cmm_cfg.c b/rlt_wifi/common/cmm_cfg.c
+--- a/rlt_wifi/common/cmm_cfg.c	2018-10-09 19:10:48.895352880 +0800
++++ b/rlt_wifi/common/cmm_cfg.c	2018-10-09 19:14:49.111222821 +0800
+@@ -1422,6 +1422,68 @@
+     return TRUE;
+ }
+ 
++INT Set_SiteSurveyChannel_Proc(
++	IN	PRTMP_ADAPTER	pAd,              
++	IN	PSTRING			arg)
++{
++	NDIS_802_11_SSID Ssid;
++	POS_COOKIE pObj;
++	UINT channel;
++
++	pObj = (POS_COOKIE) pAd->OS_Cookie;
++
++	//check if the interface is down
++	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
++	{
++		DBGPRINT(RT_DEBUG_TRACE, ("INFO::Network is down!\n"));
++		return -ENETDOWN;   
++	}
++
++    NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
++
++#ifdef CONFIG_AP_SUPPORT
++#ifdef AP_SCAN_SUPPORT
++	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
++	{
++	    if ((strlen(arg) != 0) && (strlen(arg) <= 3))
++		{
++			channel = (UINT) simple_strtol(arg, 0, 10);
++		}
++		else if(strlen(arg))
++		{
++			DBGPRINT(RT_DEBUG_ERROR,("wrong Timeout value \n"));
++			return FALSE;
++		} 
++
++#ifdef CUSTOMER_DCC_FEATURE
++		{
++			UINT32	mac_val;
++			RTMP_IO_READ32(pAd, CH_TIME_CFG, &mac_val);
++			mac_val |= 0x11f;
++			RTMP_IO_WRITE32(pAd, CH_TIME_CFG, mac_val);
++		}
++#endif
++#ifndef APCLI_CONNECTION_TRIAL
++		if (Ssid.SsidLength == 0)
++			ApSiteSurveyChannel(pAd, channel, SCAN_PASSIVE, FALSE);
++		else
++			ApSiteSurveyChannel(pAd, channel, SCAN_ACTIVE, FALSE);
++#else
++		/*for shorter scan time. use active scan and send probe req.*/
++		DBGPRINT(RT_DEBUG_TRACE, ("!!! Fast Scan for connection trial !!!\n"));
++		ApSiteSurveyChannel(pAd, channel, FAST_SCAN_ACTIVE, FALSE);
++#endif /* APCLI_CONNECTION_TRIAL */
++
++		return TRUE;
++	}
++#endif /* AP_SCAN_SUPPORT */
++#endif // CONFIG_AP_SUPPORT //
++
++
++	DBGPRINT(RT_DEBUG_TRACE, ("Set_SiteSurvey_Proc\n"));
++
++    return TRUE;
++}
+ INT	Set_Antenna_Proc(
+ 	IN	PRTMP_ADAPTER	pAd, 
+ 	IN	PSTRING			arg)
+diff -urN a/rlt_wifi/common/cmm_sanity.c b/rlt_wifi/common/cmm_sanity.c
+--- a/rlt_wifi/common/cmm_sanity.c	2018-10-09 19:11:23.167333638 +0800
++++ b/rlt_wifi/common/cmm_sanity.c	2018-10-09 19:15:05.887214090 +0800
+@@ -1485,9 +1485,10 @@
+ 	OUT UCHAR *pSsidLen, 
+ 	OUT UCHAR *pScanType
+ #ifdef CONFIG_AP_SUPPORT
++	,
++	OUT UINT	*pChannel
+ #ifdef CUSTOMER_DCC_FEATURE
+ 	,
+-	OUT UINT	*pChannel,
+ 	OUT UINT	*pTimeout
+ #endif
+ #endif
+@@ -1501,8 +1502,9 @@
+ 	NdisMoveMemory(Ssid, Info->Ssid, *pSsidLen);
+ 	*pScanType = Info->ScanType;
+ #ifdef CONFIG_AP_SUPPORT
++	if(Info->Channel)
++		*pChannel = Info->Channel;
+ #ifdef CUSTOMER_DCC_FEATURE
+-	*pChannel = Info->Channel;
+ 	*pTimeout = Info->Timeout;
+ #endif
+ #endif
+diff -urN a/rlt_wifi/include/ap.h b/rlt_wifi/include/ap.h
+--- a/rlt_wifi/include/ap.h	2018-10-09 19:12:18.703302973 +0800
++++ b/rlt_wifi/include/ap.h	2018-10-09 19:15:24.583204445 +0800
+@@ -172,6 +172,12 @@
+ 	IN	UCHAR				ScanType,
+ 	IN	BOOLEAN				ChannelSel);
+ 
++VOID ApSiteSurveyChannel(
++	IN	PRTMP_ADAPTER  		pAd,
++	IN	UINT				channel,
++	IN	UCHAR				ScanType,
++	IN	BOOLEAN				ChannelSel);
++
+ #ifdef CUSTOMER_DCC_FEATURE
+ UCHAR Channel2Index(
+ 	IN PRTMP_ADAPTER pAd,
+diff -urN a/rlt_wifi/include/mlme.h b/rlt_wifi/include/mlme.h
+--- a/rlt_wifi/include/mlme.h	2018-10-09 19:39:09.712292792 +0800
++++ b/rlt_wifi/include/mlme.h	2018-10-09 19:39:53.948650173 +0800
+@@ -1069,8 +1069,8 @@
+ 	UCHAR			ScanType;
+ 	UCHAR			Channel;
+ #ifdef CONFIG_AP_SUPPORT
+-#ifdef CUSTOMER_DCC_FEATURE
+ 	BOOLEAN		ScanGivenChannel;
++#ifdef CUSTOMER_DCC_FEATURE
+ 	UINT			ScanTime;
+ #endif
+ #endif
+@@ -1190,8 +1190,8 @@
+     UCHAR      SsidLen;
+     CHAR       Ssid[MAX_LEN_OF_SSID];
+ #ifdef CONFIG_AP_SUPPORT
+-#ifdef CUSTOMER_DCC_FEATURE
+ 	UINT		Channel;
++#ifdef CUSTOMER_DCC_FEATURE
+ 	UINT		Timeout;
+ #endif
+ #endif
+diff -urN a/rlt_wifi/include/rtmp.h b/rlt_wifi/include/rtmp.h
+--- a/rlt_wifi/include/rtmp.h	2018-10-09 19:11:53.423316866 +0800
++++ b/rlt_wifi/include/rtmp.h	2018-10-09 20:06:10.660377859 +0800
+@@ -2956,7 +2956,6 @@
+ 	
+ 	BOOLEAN Enable;		/* Set it as 1 if the apcli interface was configured to "1"  or by iwpriv cmd "ApCliEnable" */
+ 	BOOLEAN Valid;		/* Set it as 1 if the apcli interface associated success to remote AP. */
+-
+ 	MLME_AUX MlmeAux;			/* temporary settings used during MLME state machine */
+ 
+ 	UCHAR MacTabWCID;	/*WCID value, which point to the entry of ASIC Mac table. */
+@@ -7056,9 +7055,10 @@
+ 	OUT UCHAR *SsidLen, 
+ 	OUT UCHAR *ScanType
+ #ifdef CONFIG_AP_SUPPORT
++	,
++	OUT UINT *pChannel
+ #ifdef CUSTOMER_DCC_FEATURE
+ 	,
+-	OUT UINT *pChannel,
+ 	OUT UINT *pTimeout
+ #endif
+ #endif    

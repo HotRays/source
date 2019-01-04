@@ -260,9 +260,9 @@ config  RT2860V2_AP_RTMP_TEMPERATURE_COMPENSATION
 #    bool "802.11k Radio Resource Management"
 #    depends on RT2860V2_AP
 
-#config  RT2860V2_MCAST_RATE_SPECIFIC
-#    bool "User specific tx rate of mcast pkt"
-#    depends on RT2860V2_AP
+config  RT2860V2_MCAST_RATE_SPECIFIC
+    bool "User specific tx rate of mcast pkt"
+    depends on RT2860V2_AP
 
 #config  RT2860V2_SNMP
 #    bool "Net-SNMP Support"

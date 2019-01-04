@@ -1,0 +1,164 @@
+Index: mt7628/src/embedded/ap/ap_apcli.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_apcli.c	2017-01-06 19:31:23.000000000 +0800
++++ mt7628/src/embedded/ap/ap_apcli.c	2017-01-06 19:40:59.000000000 +0800
+@@ -2245,28 +2245,36 @@
+ 		return FALSE;
+ 	}
+ 
+-
+-	/* if mixed mode is set on APCLI then change the APCLI mode to more secure mode available on AP */
+-	if (pApCliEntry->bMixAuthMode == TRUE)
++	/* Recovery user-defined cipher suite */
++	pApCliEntry->PairCipher  = wdev->WepStatus;
++	pApCliEntry->GroupCipher = wdev->WepStatus;
++	pApCliEntry->bMixCipher  = FALSE;
++	if (wdev->bWpaAutoMode == TRUE)
+ 	{
+-		wdev->WepStatus = Ndis802_11AESEnable;
+-		if (WPA2_AuthMode == Ndis802_11AuthModeWPA2PSK)
++		if (Sanity == 0x2)
++		{
++			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("WPA_AUTO Mode ==> peerAp: Rsn IE\n"));
++			wdev->AuthMode = WPA2_AuthMode;
++			wdev->WepStatus = WPA2.PairCipher;
++		}
++		else if (Sanity == 0x3)
++		{
++			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("WPA_AUTO Mode ==> peerAp: including Rsn/WPA IE (DUAL)\n"));
++			wdev->AuthMode = WPA2_AuthMode;
++			wdev->WepStatus = WPA2.PairCipher;
++		}
++		else if (Sanity == 0x1)
+ 		{
+-			wdev->AuthMode = Ndis802_11AuthModeWPA2PSK;
+-			if(WPA2.bMixMode == FALSE)
+-                wdev->WepStatus = WPA2.PairCipher;
++			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,  ("WPA_AUTO Mode ==> peerAp: WPA IE\n"));
++			wdev->AuthMode = WPA_AuthMode;
++			wdev->WepStatus = WPA.PairCipher;
+ 		}
+-		else if(WPA_AuthMode == Ndis802_11AuthModeWPAPSK)
++		else
+ 		{
+-			wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
+-			if (WPA.bMixMode == FALSE)
+-                    wdev->WepStatus = WPA.PairCipher;
++			MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,  ("WPA_AUTO Mode ==> peerAp: no Rsn/WPA IE\n"));
++			return FALSE;
+ 		}
+ 	}
+-	/* Recovery user-defined cipher suite */
+-	pApCliEntry->PairCipher  = wdev->WepStatus;
+-	pApCliEntry->GroupCipher = wdev->WepStatus;
+-	pApCliEntry->bMixCipher  = FALSE;
+ 
+ 	Sanity = 0;
+ 
+@@ -3030,18 +3038,20 @@
+ 	UCHAR			ifIdx, CfgSsidLen, entryIdx;
+ 	RTMP_STRING *pCfgSsid;
+ 	BSS_TABLE		*pScanTab, *pSsidBssTab;
++	PAPCLI_STRUCT pApCliEntry = NULL;
++	struct wifi_dev *wdev;
++	ifIdx = 0;
+ 
+ 	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("---> ApCliAutoConnectExec()\n"));
+ 
+-	/* apcli interface support only one, need to fix for multi apcli? */
+-	ifIdx = 0;
+-
+ 	CfgSsidLen = pAd->ApCfg.ApCliTab[ifIdx].CfgSsidLen;
+ 	pCfgSsid = pAd->ApCfg.ApCliTab[ifIdx].CfgSsid;
+ 	pScanTab = &pAd->ScanTab;
+ 	pSsidBssTab = &pAd->ApCfg.ApCliTab[ifIdx].MlmeAux.SsidBssTab;
+ 	pSsidBssTab->BssNr = 0;
+-
++	pApCliEntry = &pAd->ApCfg.ApCliTab[ifIdx];
++	wdev = &pApCliEntry->wdev;
++	
+ 	/*
+ 		Find out APs with the desired SSID.
+ 	*/
+@@ -3056,6 +3066,27 @@
+ 							(pBssEntry->SsidLen) &&
+ 							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
+ 		{
++			if (wdev->bWpaAutoMode == TRUE)
++	        {
++				MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("WPA_AUTO Mode under the APCLI_AUTO_CONNECT mode\n"));
++				if (pBssEntry->WPA2.PairCipher != Ndis802_11WEPDisabled)
++				{
++					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,  ("WPA_AUTO Mode peerAp: RSN IE (ApCliAutoConnect)\n"));
++					wdev->AuthMode =  pBssEntry->AuthMode;
++            		wdev->WepStatus = pBssEntry->WPA2.PairCipher;
++				}
++				else if (pBssEntry->WPA.PairCipher != Ndis802_11WEPDisabled)
++				{
++					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE,  ("WPA_AUTO Mode peerAp: WPA IE (ApCliAutoConnect)\n"));
++					wdev->AuthMode =  pBssEntry->AuthMode;
++                    wdev->WepStatus = pBssEntry->WPA.PairCipher;
++				}
++				else
++				{
++					MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_TRACE, ("WPA_AUTO Mode peerAp: no Rsn/WPA IE (ApCliAutoConnect)\n"));
++				}
++			}
++			
+ 			if (ApcliCompareAuthEncryp(&pAd->ApCfg.ApCliTab[ifIdx],
+ 										pBssEntry->AuthMode,
+ 										pBssEntry->AuthModeAux,
+Index: mt7628/src/embedded/ap/ap_cfg.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_cfg.c	2017-01-06 19:31:10.000000000 +0800
++++ mt7628/src/embedded/ap/ap_cfg.c	2017-01-06 19:34:42.000000000 +0800
+@@ -9997,19 +9997,18 @@
+ 	ifIndex = pObj->ioctl_if;
+ 	wdev = &pAd->ApCfg.ApCliTab[ifIndex].wdev;
+ 
+-	pAd->ApCfg.ApCliTab[ifIndex].bMixAuthMode = FALSE;
+ 	if (rtstrcasecmp(arg, "WEPAUTO") == TRUE)
+ 		wdev->AuthMode = Ndis802_11AuthModeAutoSwitch;
+ 	else if (rtstrcasecmp(arg, "SHARED") == TRUE)
+ 		wdev->AuthMode = Ndis802_11AuthModeShared;
+ 	else if (rtstrcasecmp(arg, "WPAPSK") == TRUE)
+ 		wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
+-	else if ((rtstrcasecmp(arg, "WPA2PSK") == TRUE) || (rtstrcasecmp(arg, "WPAPSKWPA2PSK") == TRUE))
++	else if (rtstrcasecmp(arg, "WPA2PSK") == TRUE)
+ 		wdev->AuthMode = Ndis802_11AuthModeWPA2PSK;
+ 	else if (rtstrcasecmp(arg, "WPAPSKWPA2PSK") == TRUE)
+ 	{
+ 		wdev->AuthMode = Ndis802_11AuthModeWPA1PSKWPA2PSK;
+-		pAd->ApCfg.ApCliTab[ifIndex].bMixAuthMode = TRUE;
++		wdev->bWpaAutoMode = TRUE;
+ 	}
+ #ifdef WPA_SUPPLICANT_SUPPORT
+    	else if (rtstrcasecmp(arg, "WPA") == TRUE)
+Index: mt7628/src/embedded/common/cmm_profile.c
+===================================================================
+--- mt7628.orig/src/embedded/common/cmm_profile.c	2017-01-06 19:30:40.000000000 +0800
++++ mt7628/src/embedded/common/cmm_profile.c	2017-01-06 19:33:07.000000000 +0800
+@@ -873,6 +873,11 @@
+ 				wdev->AuthMode = Ndis802_11AuthModeAutoSwitch;
+ 			else if (rtstrcasecmp(macptr, "SHARED") == TRUE)
+ 				wdev->AuthMode = Ndis802_11AuthModeShared;
++			else if ((rtstrcasecmp(macptr, "WPAPSKWPA2PSK") == TRUE) || (rtstrcasecmp(macptr, "wpapskwpa2psk") == TRUE))
++			{
++				wdev->AuthMode = Ndis802_11AuthModeWPA1PSKWPA2PSK;
++				wdev->bWpaAutoMode = TRUE;
++			}
+ 			else if (rtstrcasecmp(macptr, "WPAPSK") == TRUE)
+ 				wdev->AuthMode = Ndis802_11AuthModeWPAPSK;
+ 			else if (rtstrcasecmp(macptr, "WPA2PSK") == TRUE)
+Index: mt7628/src/embedded/include/rtmp.h
+===================================================================
+--- mt7628.orig/src/embedded/include/rtmp.h	2017-01-06 19:31:42.000000000 +0800
++++ mt7628/src/embedded/include/rtmp.h	2017-01-06 19:41:37.000000000 +0800
+@@ -1582,6 +1582,7 @@
+ #if defined(DOT1X_SUPPORT) || defined(WPA_SUPPLICANT_SUPPORT)
+ 	BOOLEAN IEEE8021X; /* Only indicate if we are running in dynamic WEP mode (WEP+802.1x) */
+ #endif /* DOT1X_SUPPORT */
++	BOOLEAN bWpaAutoMode;
+ 
+ 	/* transmit segment */
+ 	BOOLEAN allow_data_tx;

@@ -1,0 +1,30 @@
+diff -uNr a/src/ap/ap_apcli.c b/src/ap/ap_apcli.c
+--- a/src/ap/ap_apcli.c	2018-11-29 20:47:37.371167386 +0800
++++ b/src/ap/ap_apcli.c	2018-11-29 20:39:47.895858918 +0800
+@@ -2830,6 +2830,7 @@
+ 	UCHAR			ifIdx, CfgSsidLen, entryIdx;
+ 	STRING			*pCfgSsid;
+ 	BSS_TABLE		*pScanTab, *pSsidBssTab;
++	APCLI_STRUCT    *pApCliEntry;
+ 
+ 	DBGPRINT(RT_DEBUG_TRACE, ("---> ApCliAutoConnectExec()\n"));
+ 
+@@ -2841,6 +2842,7 @@
+ 	pScanTab = &pAd->ScanTab;
+ 	pSsidBssTab = &pAd->MlmeAux.SsidBssTab;
+ 	pSsidBssTab->BssNr = 0;
++	pApCliEntry = &pAd->ApCfg.ApCliTab[0];
+ 	
+ 	/*
+ 		Find out APs with the desired SSID.  
+@@ -2854,7 +2856,9 @@
+ 
+ 		if (NdisEqualMemory(pCfgSsid, pBssEntry->Ssid, CfgSsidLen) &&
+ 							(pBssEntry->SsidLen) &&
+-							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE))
++							(pSsidBssTab->BssNr < MAX_LEN_OF_BSS_TABLE) &&
++							(MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, ZERO_MAC_ADDR) ||
++							MAC_ADDR_EQUAL(pApCliEntry->CfgApCliBssid, pBssEntry->Bssid)))
+ 		{	
+ 			if (ApcliCompareAuthEncryp(&pAd->ApCfg.ApCliTab[ifIdx],
+ 										pBssEntry->AuthMode,

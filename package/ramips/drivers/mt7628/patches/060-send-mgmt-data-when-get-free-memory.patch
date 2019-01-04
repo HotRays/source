@@ -1,0 +1,25 @@
+diff --git a/src/embedded/common/cmm_data.c b/src/embedded/common/cmm_data.c
+index 8f44e7a..305233d 100644
+--- a/src/embedded/common/cmm_data.c
++++ b/src/embedded/common/cmm_data.c
+@@ -1293,6 +1293,7 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACK
+ 	//UINT8 TXWISize = pAd->chipCap.TXWISize;
+ 	UINT8 tx_hw_hdr_len = pAd->chipCap.tx_hw_hdr_len;
+ 	MAC_TX_INFO mac_info;
++	ULONG FreeNum;
+ #ifdef CONFIG_AP_SUPPORT
+ #ifdef SPECIFIC_TX_POWER_SUPPORT
+ 	UCHAR TxPwrAdj = 0;
+@@ -1305,7 +1306,11 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(RTMP_ADAPTER *pAd, UCHAR QueIdx, PNDIS_PACK
+ 
+ 	/* Make sure MGMT ring resource won't be used by other threads*/
+     RTMP_IRQ_LOCK(&pAd->MgmtRingLock, Flags);
+-
++	FreeNum = GET_MGMTRING_FREENO(pAd);
++	if (FreeNum <= 0)
++	{
++		return NDIS_STATUS_FAILURE;
++	}
+ 	if (pSrcBufVA == NULL)
+ 	{
+ 		/* The buffer shouldn't be NULL*/

@@ -1,0 +1,112 @@
+Index: mt7628/src/embedded/ap/ap_assoc.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_assoc.c	2017-01-06 20:08:52.000000000 +0800
++++ mt7628/src/embedded/ap/ap_assoc.c	2017-01-06 20:13:12.000000000 +0800
+@@ -1785,6 +1785,14 @@
+ 			}
+ 		}
+ 
++		for (infoPos = (extInfoLen - 1); infoPos >= EXT_CAP_SAFE_LENGTH; infoPos--)
++		{
++			if (pInfo[infoPos])
++				break;
++		}
++
++		if(infoPos < EXT_CAP_SAFE_LENGTH)
++			extInfoLen = EXT_CAP_SAFE_LENGTH;
+ 
+ 		if (bNeedAppendExtIE == TRUE)
+ 		{
+Index: mt7628/src/embedded/ap/ap_connect.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_connect.c	2017-01-06 20:09:00.000000000 +0800
++++ mt7628/src/embedded/ap/ap_connect.c	2017-01-06 20:14:59.000000000 +0800
+@@ -1178,6 +1178,15 @@
+ 			}
+ 		}
+ 
++		for (infoPos = (extInfoLen - 1); infoPos >= EXT_CAP_SAFE_LENGTH; infoPos--)
++		{
++			if (pInfo[infoPos])
++				break;
++		}
++
++		if(infoPos < EXT_CAP_SAFE_LENGTH)
++			extInfoLen = EXT_CAP_SAFE_LENGTH;
++
+ 		if (bNeedAppendExtIE == TRUE)
+ 		{
+ 			MakeOutgoingFrame(pBeaconFrame+FrameLen, &TmpLen,
+Index: mt7628/src/embedded/ap/ap_sync.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_sync.c	2017-01-06 20:09:09.000000000 +0800
++++ mt7628/src/embedded/ap/ap_sync.c	2017-01-06 20:17:12.000000000 +0800
+@@ -341,8 +341,9 @@
+ 
+ 		/* Extended Capabilities IE */
+ 		{
+-			ULONG TmpLen;
++			ULONG TmpLen,infoPos;
+ 			EXT_CAP_INFO_ELEMENT extCapInfo;
++			PUCHAR pInfo;
+ 			UCHAR extInfoLen = sizeof(EXT_CAP_INFO_ELEMENT);
+ 
+ 			NdisZeroMemory(&extCapInfo, extInfoLen);
+@@ -374,7 +375,15 @@
+ 			if(pAd->ApCfg.MBSSID[apidx].GASCtrl.b11U_enable)
+ 				extCapInfo.interworking = 1;
+ #endif
++			pInfo = (PUCHAR)(&extCapInfo);
++			for (infoPos = (extInfoLen - 1); infoPos >= EXT_CAP_SAFE_LENGTH; infoPos--)
++			{
++				if (pInfo[infoPos])
++					break;
++			}
+ 
++			if(infoPos < EXT_CAP_SAFE_LENGTH)
++				extInfoLen = EXT_CAP_SAFE_LENGTH;
+ 
+ 			MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
+ 								1, 			&ExtCapIe,
+@@ -529,10 +538,10 @@
+ 
+ 		/* 7.3.2.27 Extended Capabilities IE */
+ 		{
+-			ULONG TmpLen;
++			ULONG TmpLen,infoPos;
+ 			EXT_CAP_INFO_ELEMENT extCapInfo;
+ 			UCHAR extInfoLen;
+-
++			PUCHAR pInfo;
+ 
+ 			extInfoLen = sizeof(EXT_CAP_INFO_ELEMENT);
+ 			NdisZeroMemory(&extCapInfo, extInfoLen);
+@@ -544,6 +553,16 @@
+ 			{
+ 				extCapInfo.BssCoexistMgmtSupport = 1;
+ 
++				pInfo = (PUCHAR)(&extCapInfo);
++				for (infoPos = (extInfoLen - 1); infoPos >= EXT_CAP_SAFE_LENGTH; infoPos--)
++				{
++					if (pInfo[infoPos])
++						break;
++				}
++
++				if(infoPos < EXT_CAP_SAFE_LENGTH)
++					extInfoLen = EXT_CAP_SAFE_LENGTH;
++				
+ 				MakeOutgoingFrame(pOutBuffer+FrameLen, &TmpLen,
+ 								1, 			&ExtCapIe,
+ 								1, 			&extInfoLen,
+Index: mt7628/src/embedded/include/mlme.h
+===================================================================
+--- mt7628.orig/src/embedded/include/mlme.h	2017-01-06 20:08:44.000000000 +0800
++++ mt7628/src/embedded/include/mlme.h	2017-01-06 20:09:58.000000000 +0800
+@@ -409,6 +409,7 @@
+ #endif // RT_BIG_ENDIAN //
+ }EXT_CAP_INFO_ELEMENT, *PEXT_CAP_INFO_ELEMENT;
+ 
++#define EXT_CAP_SAFE_LENGTH		8
+ 
+ /* 802.11n 7.3.2.61 */
+ typedef struct GNU_PACKED _BSS_2040_COEXIST_ELEMENT{

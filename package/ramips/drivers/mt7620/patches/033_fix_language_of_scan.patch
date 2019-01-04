@@ -1,0 +1,13 @@
+diff -uNr a/src/common/cmm_info.c b/src/common/cmm_info.c
+--- a/src/common/cmm_info.c	2018-09-18 19:51:10.711646517 +0800
++++ b/src/common/cmm_info.c	2018-09-18 19:51:55.307774892 +0800
+@@ -3542,7 +3542,8 @@
+ 
+ 		/*SSID*/
+ 	NdisZeroMemory(Ssid, (MAX_LEN_OF_SSID +1));
+-	if (RTMPCheckStrPrintAble((PCHAR)pBss->Ssid, pBss->SsidLen))
++//	if (RTMPCheckStrPrintAble((PCHAR)pBss->Ssid, pBss->SsidLen))
++	if (1)
+ 		NdisMoveMemory(Ssid, pBss->Ssid, pBss->SsidLen);
+ 	else
+ 	{

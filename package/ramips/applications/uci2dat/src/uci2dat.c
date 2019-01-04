@@ -34,7 +34,7 @@
 #endif
 #define SHDBG(...)   printf(__VA_ARGS__)
 #define DEVNUM_MAX (4)
-#define MBSSID_MAX (4)
+#define MBSSID_MAX (8)
 
 
 #define VFPRINT(fp, e, ...) \
@@ -100,6 +100,8 @@ typedef struct _vif
     param cipher;          /* ccmp(aes),tkip */
     param key;             /* wpa psk */
     param maxstanum;
+    param macfilter;
+    param maclist;
 
     param wepkey[4];       /* wep key, ugly, yep! */
 
@@ -131,6 +133,8 @@ vif VIF =
     .hidden             = {NULL, "hidden", NULL, NULL,  NULL},
     .cipher             = {NULL, "cipher", NULL, NULL,  NULL},
     .maxstanum			= {NULL, "MaxStaNum", NULL, NULL,  NULL},
+    .macfilter			= {NULL, "macfilter", NULL, NULL,  0},
+    .maclist			= {NULL, "maclist", NULL, NULL,  NULL},
 
     /* wpa key, or wep key index */
     .key                = {NULL, "key", NULL, NULL,  NULL},
@@ -165,11 +169,13 @@ param CFG_ELEMENTS[] =
     {"SSID2", NULL, NULL, hooker,  NULL},
     {"SSID3", NULL, NULL, hooker,  NULL},
     {"SSID4", NULL, NULL, hooker,  NULL},
+    {"SSID5", NULL, NULL, hooker,  NULL},
+    {"SSID6", NULL, NULL, hooker,  NULL},
+    {"SSID7", NULL, NULL, hooker,  NULL},
+    {"SSID8", NULL, NULL, hooker,  NULL},
     {"WirelessMode", "wifimode", NULL, hooker,  "9"},
     {"TxRate", "txrate", NULL, hooker, "0"},
     {"Channel", "channel", NULL, hooker,  "0"},
-    {"McastPhyMode", "mcastphymode", NULL, hooker,  "1"},
-    {"McastMcs", "mcastmcs", NULL, hooker,  "4"}, 
     {"BasicRate", "basicrate", NULL, hooker, "15"},
     {"BeaconPeriod", "beacon", NULL, hooker,  "100"},
     {"DtimPeriod", "dtim", NULL, hooker,  "1"},
@@ -182,7 +188,7 @@ param CFG_ELEMENTS[] =
     {"RTSThreshold", "rtsthres", NULL, hooker,  "2347"},
     {"FragThreshold", "fragthres", NULL, hooker,  "2346"},
     {"TxBurst", "txburst", NULL, hooker,  "1"},
-    {"PktAggregate", "pktaggre", NULL, hooker,  "0"},
+    {"PktAggregate", "pktaggre", NULL, hooker,  "1"},
     {"TurboRate", "turborate", NULL, hooker, "0"},
     {"WmmCapable", "wmm", NULL, hooker, "1"},
     {"APSDCapable", "apsd", NULL, hooker, "1"},
@@ -199,7 +205,8 @@ param CFG_ELEMENTS[] =
     {"BSSACM", "bssacm", NULL, hooker, "0;0;0;0"},
     {"AckPolicy", "ackpolicy", NULL, hooker, "0;0;0;0"},
     {"NoForwarding", "noforward", NULL, hooker, "0"},
-    {"NoForwardingBTNBSSID", NULL, NULL, NULL, "0"},
+    {"NoForwardingBTNBSSID", "noforwardBTNBSSID", NULL, NULL, "0"},
+    {"NoForwardingMBCast", "noforwardMBCast", NULL, NULL, "0"},
     {"HideSSID", "hidden", NULL, hooker,  "0"},
     {"StationKeepAlive", NULL, NULL, NULL, "0"},
     {"ShortSlot", "shortslot", NULL, hooker,  "1"},
@@ -247,14 +254,22 @@ param CFG_ELEMENTS[] =
     {"Key4Str2", NULL, NULL, hooker, NULL},
     {"Key4Str3", NULL, NULL, hooker, NULL},
     {"Key4Str4", NULL, NULL, hooker, NULL},
-    {"AccessPolicy0", NULL, NULL, NULL, "0"},
-    {"AccessControlList0", NULL, NULL, NULL, NULL},
-    {"AccessPolicy1", NULL, NULL, NULL, "0"},
-    {"AccessControlList1", NULL, NULL, NULL, NULL},
-    {"AccessPolicy2", NULL, NULL, NULL, "0"},
-    {"AccessControlList2", NULL, NULL, NULL, NULL},
-    {"AccessPolicy3", NULL, NULL, NULL, "0"},
-    {"AccessControlList3", NULL, NULL, NULL, NULL},
+    {"AccessPolicy0", NULL, NULL, hooker, "0"},
+    {"AccessControlList0", NULL, NULL, hooker, NULL},
+    {"AccessPolicy1", NULL, NULL, hooker, "0"},
+    {"AccessControlList1", NULL, NULL, hooker, NULL},
+    {"AccessPolicy2", NULL, NULL, hooker, "0"},
+    {"AccessControlList2", NULL, NULL, hooker, NULL},
+    {"AccessPolicy3", NULL, NULL, hooker, "0"},
+    {"AccessControlList3", NULL, NULL, hooker, NULL},
+    {"AccessPolicy4", NULL, NULL, hooker, "0"},
+    {"AccessControlList4", NULL, NULL, hooker, NULL},
+    {"AccessPolicy5", NULL, NULL, hooker, "0"},
+    {"AccessControlList5", NULL, NULL, hooker, NULL},
+    {"AccessPolicy6", NULL, NULL, hooker, "0"},
+    {"AccessControlList6", NULL, NULL, hooker, NULL},
+    {"AccessPolicy7", NULL, NULL, hooker, "0"},
+    {"AccessControlList7", NULL, NULL, hooker, NULL},
     {"WdsEnable", "wds_enable", NULL, hooker, "0"},
     {"WdsEncrypType", "wds_enctype", NULL, hooker, "NONE"},
     {"WdsList", NULL, NULL, NULL, NULL},
@@ -281,8 +296,8 @@ param CFG_ELEMENTS[] =
     {"VHT_BW", "bw", NULL, hooker,  "0"},
     {"VHT_Sec80_Channel", "vht2ndchannel", NULL, hooker, NULL},
     {"VHT_SGI", "vht_sgi", NULL, hooker,  "1"},
-    {"VHT_STBC", "vht_stbc", NULL, hooker, "0"},
-    {"VHT_BW_SIGNAL", "vht_bw_sig", NULL, hooker,  "0"},
+    {"VHT_STBC", "vht_stbc", NULL, hooker, "1"},
+    {"VHT_BW_SIGNAL", "vht_bw_sig", NULL, hooker,  "1"},
     {"VHT_DisallowNonVHT", "vht_disnonvht", NULL, hooker, NULL},
     {"VHT_LDPC", "vht_ldpc", NULL, hooker, "1"},
     {"HT_AutoBA", "ht_autoba", NULL, hooker, "1"},
@@ -392,7 +407,6 @@ param CFG_ELEMENTS[] =
     {"ApCliEnable", NULL, NULL, hooker, "0"},
     {"ApCliSsid", "ssid", NULL, hooker, NULL},
     {"ApCliBssid", "bssid", NULL, hooker, NULL},
-	{"ApCliLockMac", "bssid", NULL, hooker, NULL},
     {"ApCliAuthMode", NULL, NULL, hooker, NULL},
     {"ApCliEncrypType", NULL, NULL, hooker, NULL},
     {"ApCliWPAPSK", "key", NULL, hooker, NULL},
@@ -813,17 +827,6 @@ void parse_uci(char * arg)
 							printf("%s(),    %s=%s\n", __FUNCTION__, CFG_ELEMENTS[i].dat_key, wifi_cfg[cur_dev].params[i].value);
 						}
 
-						if (!strcmp(CFG_ELEMENTS[i].dat_key, "ApCliLockMac"))
-						{
-							value = NULL;
-		                    value = uci_lookup_option_string(uci_ctx, s, CFG_ELEMENTS[i].uci_key);
-		                    if(value && value[0] != '\0')
-		                    {
-		                        wifi_cfg[cur_dev].params[i].value = strdup("1");
-								printf("%s(),    %s=%s\n", __FUNCTION__, CFG_ELEMENTS[i].dat_key, wifi_cfg[cur_dev].params[i].value);
-		                    }
-						}
-
 						else if (!strcmp(CFG_ELEMENTS[i].dat_key, "ApCliEncrypType"))
 						{
 							if (!authmode) continue;
@@ -903,7 +906,9 @@ void parse_uci(char * arg)
             PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].rekeyinteval, value);
             PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].preauth, value);
             PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].pmkcacheperiod, value);
-			PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].maxstanum, value);
+            PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].maxstanum, value);
+            PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].macfilter, value);
+            PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].maclist, value);
 #if 0
             PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].authmode, value);
             PARSE_UCI_OPTION(wifi_cfg[cur_dev].vifs[cur_vif].cipher, value);
@@ -1137,28 +1142,37 @@ void hooker(FILE * fp, param * p, const char * devname)
                 FPRINT(fp, p, wifi_cfg[N].vifs[i].maxstanum.value);
         }
     }
+    else if(0 == strmatch(p->dat_key, "AccessPolicy?"))
+    {
+        i = atoi(p->dat_key+12);
+        if(i<0 || i >= MBSSID_MAX)
+        {
+            printf("%s() array index error, L%d\n", __FUNCTION__, __LINE__);
+            return;
+        }
+        if (!wifi_cfg[N].vifs[i].macfilter.value){
+            FPRINT(fp, p, "0");
+            return;
+        }
+        FPRINT(fp, p, wifi_cfg[N].vifs[i].macfilter.value);
+    }
+    else if(0 == strmatch(p->dat_key, "AccessControlList?"))
+    {
+        i = atoi(p->dat_key+17);
+        if(i<0 || i >= MBSSID_MAX)
+        {
+            printf("%s() array index error, L%d\n", __FUNCTION__, __LINE__);
+            return;
+        }
+        if (!wifi_cfg[N].vifs[i].maclist.value) return;
+        FPRINT(fp, p, wifi_cfg[N].vifs[i].maclist.value);
+    }
     else if(0 == strcmp(p->dat_key, "Channel"))
     {
         if(0 == strcmp(p->value, "auto"))
             FPRINT(fp, p, "0");
         else
             FPRINT(fp, p, p->value);
-    }
-    else if(0 == strcmp(p->dat_key, "McastPhyMode"))
-    {
-        int value = atoi(p->value);
-        if (value >= 1 && value <= 4)
-            FPRINT(fp, p, p->value);
-        else
-            FPRINT(fp, p, "1");
-    }
-    else if(0 == strcmp(p->dat_key, "McastMcs"))
-    {
-        int value = atoi(p->value);
-        if (value >= 1 && value <= 25)
-            FPRINT(fp, p, p->value);
-        else
-            FPRINT(fp, p, "4");
     }
     else if(0 == strcmp(p->dat_key, "AutoChannelSelect"))
     {

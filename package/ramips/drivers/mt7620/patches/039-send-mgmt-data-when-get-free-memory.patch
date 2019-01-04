@@ -1,0 +1,44 @@
+diff --git a/src/common/cmm_data.c b/src/common/cmm_data.c
+index 059a9af..bbb0f5c 100644
+--- a/src/common/cmm_data.c
++++ b/src/common/cmm_data.c
+@@ -529,6 +529,7 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(
+ 	MAC_TABLE_ENTRY	*pMacEntry = NULL;
+ 	UCHAR			PID;
+ 	UINT8 TXWISize = pAd->chipCap.TXWISize;
++	ULONG	 		FreeNum;
+ #ifdef CONFIG_AP_SUPPORT
+ #ifdef SPECIFIC_TX_POWER_SUPPORT
+ 	UCHAR TxPwrAdj = 0;
+@@ -539,6 +540,11 @@ NDIS_STATUS MlmeHardTransmitMgmtRing(
+ 
+ 	/* Make sure MGMT ring resource won't be used by other threads*/
+ 	RTMP_SEM_LOCK(&pAd->MgmtRingLock);
++	FreeNum = GET_MGMTRING_FREENO(pAd);
++	if (FreeNum <= 0)
++	{
++		return NDIS_STATUS_FAILURE;
++	}
+ 	if (pSrcBufVA == NULL)
+ 	{
+ 		/* The buffer shouldn't be NULL*/
+diff --git a/src/common/cmm_data_pci.c b/src/common/cmm_data_pci.c
+index bdec4dc..24cdfe8 100644
+--- a/src/common/cmm_data_pci.c
++++ b/src/common/cmm_data_pci.c
+@@ -1033,6 +1033,7 @@ VOID	RTMPHandleMgmtRingDmaDoneInterrupt(
+ 		if (pPacket == NULL)
+ 		{
+ 			INC_RING_INDEX(pMgmtRing->TxSwFreeIdx, MGMT_RING_SIZE);
++			pTxD->DMADONE = 0;
+ 			continue;
+ 		}
+ 
+@@ -1082,6 +1083,7 @@ VOID	RTMPHandleMgmtRingDmaDoneInterrupt(
+ 						RXD_SIZE);
+ 
+ 		INC_RING_INDEX(pMgmtRing->TxSwFreeIdx, MGMT_RING_SIZE);
++		pTxD->DMADONE = 0;
+ 
+ #ifdef RT_BIG_ENDIAN
+         RTMPDescriptorEndianChange((PUCHAR)pTxD, TYPE_TXD);

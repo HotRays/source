@@ -1,0 +1,52 @@
+Index: mt7628/src/embedded/ap/ap_sync.c
+===================================================================
+--- mt7628.orig/src/embedded/ap/ap_sync.c	2017-01-06 20:40:13.000000000 +0800
++++ mt7628/src/embedded/ap/ap_sync.c	2017-01-06 20:41:50.000000000 +0800
+@@ -1513,17 +1513,22 @@
+ 								ConvertToRssi(pAd, &Elem->rssi_info, RSSI_IDX_2));
+ 
+ 
+-		
+-		/* ignore BEACON not in this channel */
+-		if (ie_list->Channel != pAd->ScanCtrl.Channel
++		/* In 2.4GHz band driver can recieve beacon on channel different
++         * than current scanning one, so no need to drop it.
++         */
++		if(ie_list->Channel > 14)
++		{
++			/* ignore BEACON not in this channel */
++			if (ie_list->Channel != pAd->ScanCtrl.Channel
+ #ifdef DOT11_N_SUPPORT
+ #ifdef DOT11N_DRAFT3
+-			&& (pAd->CommonCfg.bOverlapScanning == FALSE)
++				&& (pAd->CommonCfg.bOverlapScanning == FALSE)
+ #endif /* DOT11N_DRAFT3 */
+ #endif /* DOT11_N_SUPPORT */
+-		   )
+-		{
+-			goto __End_Of_APPeerBeaconAtScanAction;
++			   )
++			{
++				goto __End_Of_APPeerBeaconAtScanAction;
++			}
+ 		}
+ 
+ #ifdef DOT11_N_SUPPORT
+Index: mt7628/src/embedded/common/scan.c
+===================================================================
+--- mt7628.orig/src/embedded/common/scan.c	2017-01-06 20:39:05.000000000 +0800
++++ mt7628/src/embedded/common/scan.c	2017-01-06 20:39:42.000000000 +0800
+@@ -686,6 +686,13 @@
+ #endif /* CONFIG_STA_SUPPORT */
+ 
+ 		AsicSwitchChannel(pAd, pAd->ScanCtrl.Channel, TRUE);
++
++		/* MT7628 sometimes fail to scan the hidden SSID, as sometimes
++		 * it is not able to send probe request and sometimes fails to
++		 * recieve probe response, after adding a delay after switching
++		 * channel during scan, it works fine.
++         */
++		RtmpusecDelay(5000);
+ 		AsicLockChannel(pAd, pAd->ScanCtrl.Channel);
+ 
+ #ifdef CONFIG_STA_SUPPORT
