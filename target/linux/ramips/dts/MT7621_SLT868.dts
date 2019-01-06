@@ -12,15 +12,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	gpio-leds {
-		compatible = "gpio-leds";
-
-		power {
-			label = "puppies:green:power";
-			gpios = <&gpio0 22 1>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -104,6 +95,70 @@
 
 &ethernet {
 	mtd-mac-address = <&factory 0xe000>;
+};
+
+&i2c {
+        status = "okay";
+	aw9523b@5b {
+		compatible = "awinic,aw9523b";
+		reg = <0x5b>;
+
+		aw9523b,LTE1_SS1 {
+			aw9523b,name = "LTE1_SS1";
+			aw9523b,id = <8>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,LTE1_SS2 {
+			aw9523b,name = "LTE1_SS2";
+			aw9523b,id = <9>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,LTE1_SS3 {
+			aw9523b,name = "LTE1_SS3";
+			aw9523b,id = <10>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,LTE1_SS4 {
+			aw9523b,name = "LTE1_SS4";
+			aw9523b,id = <11>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,LTE1_SS5 {
+			aw9523b,name = "LTE1_SS5";
+			aw9523b,id = <0>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,WPS_LED {
+			aw9523b,name = "WPS_LED";
+			aw9523b,id = <5>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,WIFI_LED {
+			aw9523b,name = "WIFI_LED";
+			aw9523b,id = <6>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,LAN_LED {
+			aw9523b,name = "LAN_LED";
+			aw9523b,id = <7>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,WAN_LED {
+			aw9523b,name = "WAN_LED";
+			aw9523b,id = <12>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,internet1 {
+			aw9523b,name = "internet1";
+			aw9523b,id = <13>;
+			aw9523b,max-brightness = <255>;
+		};
+		aw9523b,internet {
+			aw9523b,name = "internet";
+			aw9523b,id = <14>;
+			aw9523b,max-brightness = <255>;
+		};
+	};
 };
 
 &pinctrl {
