@@ -81,6 +81,7 @@ ramips_setup_interfaces()
 	firewrt|\
 	puppies|\
 	nxc200p|\
+	mt7621_slt868|\
 	hlk-rm04|\
 	mac1200rv2|\
 	miwifi-mini|\
