@@ -2,5 +2,5 @@ src-git packages https://gitlab.com/tenbay4grouter/lede17/lede-packages.git;rele
 src-git luci https://gitlab.com/tenbay4grouter/lede17/lede-luci.git;release-operator-v1.0-MG
 src-git routing https://gitlab.com/tenbay4grouter/lede17/lede-routing.git;release-operator-v1.0-MG
 src-git telephony https://gitlab.com/tenbay4grouter/lede17/lede-telephony.git;release-operator-v1.0-MG
-src-git puppies https://gitlab.com/tenbay4grouter/lede17/openwrt-ac-puppies.git;release-operator-v1.0-MG
+src-git puppies https://gitlab.com/tenbay4grouter/lede17/4GRouter-puppies.git;release-operator-v1.0-MG
 src-git ptpt52 https://github.com/ptpt52/com.ptpt52.openwrt.git
