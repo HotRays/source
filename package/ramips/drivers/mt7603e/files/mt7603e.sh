@@ -38,7 +38,7 @@ config wifi-device      mt7603e
         option wifimode '7'
         option txpower '100'
         option txburst '1'
-        option aregion '1'
+        option aregion '0'
         option ht_gi '1'
         option ht_stbc '1'
         option ht_ldpc '1'
