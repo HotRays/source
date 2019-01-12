@@ -1,0 +1,13 @@
+diff --git a/rlt_wifi/common/cmm_sync.c b/rlt_wifi/common/cmm_sync.c
+index 6fdf71f..4bc1630 100644
+--- a/rlt_wifi/common/cmm_sync.c
++++ b/rlt_wifi/common/cmm_sync.c
+@@ -267,7 +267,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
+ 	DBGPRINT(RT_DEBUG_TRACE, ("SupportedChannelList:\n"));
+ 	for (i=0; i<pAd->ChannelListNum; i++)
+ 	{
+-		DBGPRINT_RAW(RT_DEBUG_TRACE,("\tChannel # %d: Pwr0/1 = %d/%d, Flags = %x\n ",
++		DBGPRINT_RAW(RT_DEBUG_ERROR,("\tChannel # %d: Pwr0/1 = %d/%d, Flags = %x\n ",
+ 									 pAd->ChannelList[i].Channel,
+ 									 pAd->ChannelList[i].Power,
+ 									 pAd->ChannelList[i].Power2,
