@@ -1,0 +1,86 @@
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index a79cd09..7efa040 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -975,8 +975,8 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
+ 	size_t *retlen, const u_char *buf)
+ {
+ 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
+-	u32 page_offset, page_size, i;
+-	int ret;
++	size_t page_offset, page_remain, i;
++	ssize_t ret;
+ 
+ 	dev_dbg(nor->dev, "to 0x%08x, len %zd\n", (u32)to, len);
+ 
+@@ -984,35 +984,50 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
+ 	if (ret)
+ 		return ret;
+ 
+-	write_enable(nor);
++	for (i = 0; i < len; ) {
++		ssize_t written;
++		loff_t addr = to + i;
+ 
+-	page_offset = to & (nor->page_size - 1);
++		/*
++		 * If page_size is a power of two, the offset can be quickly
++		 * calculated with an AND operation. On the other cases we
++		 * need to do a modulus operation (more expensive).
++		 * Power of two numbers have only one bit set and we can use
++		 * the instruction hweight32 to detect if we need to do a
++		 * modulus (do_div()) or not.
++		 */
++		if (hweight32(nor->page_size) == 1) {
++			page_offset = addr & (nor->page_size - 1);
++		} else {
++			uint64_t aux = addr;
+ 
+-	/* do all the bytes fit onto one page? */
+-	if (page_offset + len <= nor->page_size) {
+-		nor->write(nor, to, len, retlen, buf);
+-	} else {
++			page_offset = do_div(aux, nor->page_size);
++		}
+ 		/* the size of data remaining on the first page */
+-		page_size = nor->page_size - page_offset;
+-		nor->write(nor, to, page_size, retlen, buf);
++		page_remain = min_t(size_t,
++				    nor->page_size - page_offset, len - i);
+ 
+-		/* write everything in nor->page_size chunks */
+-		for (i = page_size; i < len; i += page_size) {
+-			page_size = len - i;
+-			if (page_size > nor->page_size)
+-				page_size = nor->page_size;
+-
+-			ret = spi_nor_wait_till_ready(nor);
+-			if (ret)
+-				goto write_err;
+ 
+-			write_enable(nor);
++		write_enable(nor);
++		nor->write(nor, addr, page_remain, &ret, buf + i);
++		if (ret < 0)
++			goto write_err;
++		written = ret;
+ 
+-			nor->write(nor, to + i, page_size, retlen, buf + i);
++		ret = spi_nor_wait_till_ready(nor);
++		if (ret)
++			goto write_err;
++		*retlen += written;
++		i += written;
++		if (written != page_remain) {
++			dev_err(nor->dev,
++				"While writing %zu bytes written %zd bytes\n",
++				page_remain, written);
++			ret = -EIO;
++			goto write_err;
+ 		}
+ 	}
+ 
+-	ret = spi_nor_wait_till_ready(nor);
+ write_err:
+ 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
+ 	return ret;
