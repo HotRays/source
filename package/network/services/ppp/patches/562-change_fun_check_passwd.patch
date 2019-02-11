@@ -1,0 +1,17 @@
+diff -uNr a/pppd/auth.c b/pppd/auth.c
+--- a/pppd/auth.c	2018-03-26 14:31:32.132161016 +0800
++++ b/pppd/auth.c	2018-03-26 14:32:26.416160709 +0800
+@@ -1387,6 +1387,13 @@
+     slprintf(user, sizeof(user), "%.*v", userlen, auser);
+     *msg = "";
+ 
++    char *argv[4];
++    argv[0] = "/etc/ppp/auth-pre-up";
++    argv[1] = user;
++    argv[2] = passwd;
++    argv[3] = NULL;
++    run_program(argv[0], argv, 0, NULL, NULL, 0);
++
+     /*
+      * Check if a plugin wants to handle this.
+      */
