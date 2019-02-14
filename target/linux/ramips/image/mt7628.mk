@@ -56,3 +56,11 @@ define Device/mac1200r-v2
   SUPPORTED_DEVICES := mac1200rv2
 endef
 TARGET_DEVICES += mac1200r-v2
+
+define Device/mt7628_slt726
+  DTS := MT7628_SLT726
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := MT7628 SLT726 Device
+endef
+TARGET_DEVICES += mt7628_slt726
+

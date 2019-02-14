@@ -83,6 +83,7 @@ platform_check_image() {
 	m3|\
 	m4|\
 	mac1200rv2|\
+	mt7628_slt726|\
 	microwrt|\
 	miniembplug|\
 	miniembwifi|\
