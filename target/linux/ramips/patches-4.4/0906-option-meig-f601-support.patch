@@ -1,0 +1,21 @@
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index 4d95aa1..229fc1d 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -238,6 +238,7 @@ static void option_instat_callback(struct urb *urb);
+ #define QUECTEL_PRODUCT_UC15			0x9090
+ /* These Meig products use Qualcomm's vendor ID */
+ #define MEIG_PRODUCT_9025			0x9025
++#define MEIG_PRODUCT_F601			0xf601
+ 
+ #define QUECTEL_VENDOR_ID			0x2c7c
+ /* These Quectel products use Quectel's vendor ID */
+@@ -1184,6 +1185,8 @@ static const struct usb_device_id option_ids[] = {
+ 	/* Meig products using Qualcomm vendor ID */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_9025),
+ 	  .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_F601),
++	  .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
+ 	/* Quectel products using Quectel vendor ID */
+ 	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EC21),
+ 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
