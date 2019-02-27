@@ -1,6 +1,8 @@
 /dts-v1/;
 
 #include "mt7628an.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 
 / {
 	compatible = "mediatek,mt7628an-eval-board", "mediatek,mt7628an-soc";
@@ -10,12 +12,85 @@
 		device_type = "memory";
 		reg = <0x0 0x4000000>;
 	};
+
+	gpio-leds {
+                compatible = "gpio-leds";
+
+                rssi_level1 {
+                        label = "rssi_level1:blue";
+                        gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+                };
+
+                rssi_level2 {
+                        label = "rssi_level2:blue";
+                        gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+                };
+
+                rssi_level3 {
+                        label = "rssi_level3:blue";
+                        gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+                };
+
+                rssi_level4 {
+                        label = "rssi_level4:blue";
+                        gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+                };
+
+                rssi_level5 {
+                        label = "rssi_level5:blue";
+                        gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+                };
+
+                net {
+                        label = "net:blue";
+                        gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+                };
+
+                eth {
+                        label = "eth:blue";
+                        gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+                };
+
+                sys {
+                        label = "sys:blue";
+                        gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+                };
+
+                wled {
+                        label = "wled:blue";
+                        gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+                };
+        };
+
+        gpio-keys-polled {
+                compatible = "gpio-keys-polled";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                poll-interval = <10>;
+
+                reset {
+                        label = "reset";
+                        gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_RESTART>;
+                };
+                wps {
+                        label = "wps";
+                        gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_WPS_BUTTON>;
+                };
+
+                power {
+                        label = "power";
+                        gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_POWER>;
+                };
+        };
 };
 
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c";
+			ralink,group = "i2c", "i2s", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "uart1", "refclk", "wled_an";
 			ralink,function = "gpio";
 		};
 	};
