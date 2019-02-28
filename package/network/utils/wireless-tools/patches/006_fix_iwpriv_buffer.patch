@@ -1,0 +1,12 @@
+diff -uNr a/iwpriv.c b/iwpriv.c
+--- a/iwpriv.c	2018-08-13 09:39:45.115774187 +0000
++++ b/iwpriv.c	2018-08-13 09:39:27.799791704 +0000
+@@ -259,7 +259,7 @@
+ 		int		priv_num)	/* Number of descriptions */
+ {
+   struct iwreq	wrq;
+-  u_char	buffer[4096];	/* Only that big in v25 and later */
++  u_char	buffer[8192];	/* Only that big in v25 and later */
+   int		i = 0;		/* Start with first command arg */
+   int		k;		/* Index in private description table */
+   int		temp;
