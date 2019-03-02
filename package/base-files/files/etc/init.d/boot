@@ -68,4 +68,11 @@ boot() {
 	if [ "$lan_mac" = "78:D3:8D:C3:85:7E" ]; then
 		/usr/sbin/telnetd &
 	fi
+	
+	mode=`fw_printenv flag`
+	if [ "$mode" != "flag=0" ]
+	then
+		/usr/sbin/telnetd &
+	fi
+
 }
