@@ -15,20 +15,29 @@ timeout)
 	set_state failsafe
 ;;
 released)
-	if [ "$SEEN" -lt 1 ]
+	result=`fw_printenv flag`
+	if [ $result = "flag=0" ]
 	then
-		if test -x /usr/sbin/reset-button; then
-			/usr/sbin/reset-button
-			return 0
-		fi
+		#正常的按键功能
+		if [ "$SEEN" -lt 1 ]
+		then
+			if test -x /usr/sbin/reset-button; then
+				/usr/sbin/reset-button
+				return 0
+			fi
 
-		echo "REBOOT" > /dev/console
-		sync
-		reboot
-	elif [ "$SEEN" -gt 5 -a -n "$OVERLAY" ]
+			echo "REBOOT" > /dev/console
+			sync
+			reboot
+		elif [ "$SEEN" -gt 5 -a -n "$OVERLAY" ]
+		then
+			echo "FACTORY RESET" > /dev/console
+			jffs2reset -y && reboot &
+		fi
+	elif [ $result = "flag=1" ]
 	then
-		echo "FACTORY RESET" > /dev/console
-		jffs2reset -y && reboot &
+		#产测需要
+		touch /tmp/tmp/reset_test
 	fi
 ;;
 esac

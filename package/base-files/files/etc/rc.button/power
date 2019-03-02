@@ -1,7 +1,13 @@
 #!/bin/sh
 
 [ "${ACTION}" = "released" ] || exit 0
-
-exec /sbin/poweroff
+result=`fw_printenv flag`
+if [ $result = "flag=0" ]
+then
+	exec /sbin/poweroff
+elif [ $result = "flag=1" ]
+then
+	touch /tmp/tmp/4g_test
+fi
 
 return 0
