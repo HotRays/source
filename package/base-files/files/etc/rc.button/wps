@@ -6,8 +6,11 @@
 case "$ACTION" in
 pressed)
 	result=`fw_printenv flag`
-	if [ $result = "flag=0" ]
+	if [ "$result" = "flag=1" ]
 	then
+		#产测需要
+		touch /tmp/tmp/wps_test
+	else
 		#正常的WPS功能
 		echo "WPS" > /dev/console
 		iwpriv ra0 set WscConfMode=7
@@ -17,10 +20,6 @@ pressed)
 		echo timer > /sys/class/leds/WPS_LED/trigger
 		echo 200 > /sys/class/leds/WPS_LED/delay_on
 		echo 1400 > /sys/class/leds/WPS_LED/delay_off
-	elif [ $result = "flag=1" ]
-	then
-		#产测需要
-		touch /tmp/tmp/wps_test
 	fi
 ;;
 esac

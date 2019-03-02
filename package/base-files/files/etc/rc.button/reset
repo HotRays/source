@@ -16,8 +16,11 @@ timeout)
 ;;
 released)
 	result=`fw_printenv flag`
-	if [ $result = "flag=0" ]
+	if [ "$result" = "flag=1" ]
 	then
+		#产测需要
+		touch /tmp/tmp/reset_test
+	else
 		#正常的按键功能
 		if [ "$SEEN" -lt 1 ]
 		then
@@ -34,10 +37,6 @@ released)
 			echo "FACTORY RESET" > /dev/console
 			jffs2reset -y && reboot &
 		fi
-	elif [ $result = "flag=1" ]
-	then
-		#产测需要
-		touch /tmp/tmp/reset_test
 	fi
 ;;
 esac
