@@ -70,7 +70,7 @@ boot() {
 	fi
 	
 	mode=`fw_printenv flag`
-	if [ "$mode" != "flag=0" ]
+	if [ "$mode" = "flag=1" ]
 	then
 		/usr/sbin/telnetd &
 	fi
