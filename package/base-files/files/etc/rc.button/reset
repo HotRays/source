@@ -4,6 +4,7 @@
 
 OVERLAY="$( grep ' /overlay ' /proc/mounts )"
 
+path_mode="/tmp/tmp/mode_test"
 case "$ACTION" in
 pressed)
 	[ -z "$OVERLAY" ] && return 0
@@ -15,8 +16,7 @@ timeout)
 	set_state failsafe
 ;;
 released)
-	result=`fw_printenv flag`
-	if [ "$result" = "flag=1" ]
+	if [ -f "$path_mode" ]
 	then
 		#产测需要
 		touch /tmp/tmp/reset_test

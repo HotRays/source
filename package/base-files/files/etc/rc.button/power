@@ -1,8 +1,8 @@
 #!/bin/sh
 
 [ "${ACTION}" = "released" ] || exit 0
-result=`fw_printenv flag`
-if [ "$result" = "flag=1" ]
+path_mode="/tmp/tmp/mode_test"
+if [ -f "$path_mode" ]
 then
 	touch /tmp/tmp/4g_test
 else

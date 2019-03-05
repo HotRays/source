@@ -61,18 +61,4 @@ boot() {
 	if [ -f /usr/sbin/check_leds_LS86330 ]; then
 		/usr/sbin/check_leds_LS86330 &
 	fi
-
-
-	# for product testing
-	lan_mac=$(dd if=/dev/mtdblock2 bs=1 skip=40 count=6 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"' | tr a-z A-Z)
-	if [ "$lan_mac" = "78:D3:8D:C3:85:7E" ]; then
-		/usr/sbin/telnetd &
-	fi
-	
-	mode=`fw_printenv flag`
-	if [ "$mode" = "flag=1" ]
-	then
-		/usr/sbin/telnetd &
-	fi
-
 }

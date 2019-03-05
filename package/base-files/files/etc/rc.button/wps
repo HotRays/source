@@ -2,11 +2,10 @@
 
 . /lib/functions.sh
 
-
+path_mode="/tmp/tmp/mode_test"
 case "$ACTION" in
 pressed)
-	result=`fw_printenv flag`
-	if [ "$result" = "flag=1" ]
+	if [ -f "$path_mode" ]
 	then
 		#产测需要
 		touch /tmp/tmp/wps_test
