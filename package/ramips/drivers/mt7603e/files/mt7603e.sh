@@ -12,7 +12,7 @@ scan_mt7603e() {
 }
 
 disable_mt7603e() {
-	disable_ralink_wifi mt7603e
+	disable_ralink_wifi mt7603e mt7603e
 }
 
 enable_mt7603e() {
