@@ -1,0 +1,74 @@
+diff -uNr a/options.c b/options.c
+--- a/options.c	2019-03-30 03:06:50.879412888 +0000
++++ b/options.c	2019-03-30 08:29:38.000000000 +0000
+@@ -1151,3 +1151,17 @@
+ 
+ 	return buf;
+ }
++
++bool
++fw3_parse_cone_type(void *ptr, const char *val, bool is_list)
++{
++	if (strcmp(val, "full") && strcmp(val, "FULL") 
++		&& strcmp(val, "ar") && strcmp(val, "AR") 
++		&& strcmp(val, "pr") && strcmp(val, "PR")) {
++		return false;
++	}
++	
++	*((char **)ptr) = (char *)val;
++	
++	return true;
++}
+\ No newline at end of file
+diff -uNr a/options.h b/options.h
+--- a/options.h	2019-03-30 03:06:50.935413295 +0000
++++ b/options.h	2019-03-30 08:17:03.000000000 +0000
+@@ -309,6 +309,8 @@
+ 	struct list_head masq_dest;
+ 
+ 	bool mtu_fix;
++	
++	const char *cone_type;
+ 
+ 	bool log;
+ 	struct fw3_limit log_limit;
+@@ -565,6 +567,8 @@
+ bool fw3_parse_blob_options(void *s, const struct fw3_option *opts,
+                             struct blob_attr *a, const char *name);
+ 
++bool fw3_parse_cone_type(void *ptr, const char *val, bool is_list);
++
+ const char * fw3_address_to_string(struct fw3_address *address,
+                                    bool allow_invert, bool as_cidr);
+ 
+diff -uNr a/zones.c b/zones.c
+--- a/zones.c	2019-03-30 03:06:50.879412888 +0000
++++ b/zones.c	2019-03-30 08:18:16.000000000 +0000
+@@ -85,6 +85,8 @@
+ 
+ 	FW3_LIST("__addrs",            address,  zone,     old_addrs),
+ 
++	FW3_OPT("cone_type",                cone_type,   zone,     cone_type),
++
+ 	{ }
+ };
+ 
+@@ -612,6 +614,18 @@
+ 					                    handle->family, false)) || first_dest;
+ 				     first_dest = false)
+ 				{
++					if (zone->cone_type) {
++						r = fw3_ipt_rule_new(handle);
++						fw3_ipt_rule_src_dest(r, msrc, mdest);
++						fw3_ipt_rule_target(r, "CONENAT");
++						fw3_ipt_rule_addarg(r, false, "--cone-nat-type", zone->cone_type);
++						fw3_ipt_rule_append(r, "zone_%s_postrouting", zone->name);
++						r = fw3_ipt_rule_new(handle);
++						fw3_ipt_rule_src_dest(r, msrc, mdest);
++						fw3_ipt_rule_target(r, "CONENAT");
++						fw3_ipt_rule_addarg(r, false, "--cone-nat-type", zone->cone_type);
++						fw3_ipt_rule_append(r, "zone_%s_prerouting", zone->name);
++					}
+ 					r = fw3_ipt_rule_new(handle);
+ 					fw3_ipt_rule_src_dest(r, msrc, mdest);
+ 					fw3_ipt_rule_target(r, "MASQUERADE");
