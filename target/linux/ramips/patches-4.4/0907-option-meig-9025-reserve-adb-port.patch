@@ -1,0 +1,15 @@
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index 229fc1d..6d1b9fd 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -1183,8 +1183,8 @@ static const struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, QUECTEL_PRODUCT_UC20),
+ 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
+ 	/* Meig products using Qualcomm vendor ID */
+-	{ USB_DEVICE(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_9025),
+-	  .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
++	{ USB_DEVICE_AND_INTERFACE_INFO(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_9025, 0xff, 0xff, 0xff) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_9025, 0xff, 0x00, 0x00) },
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, MEIG_PRODUCT_F601),
+ 	  .driver_info = (kernel_ulong_t)&cinterion_rmnet2_blacklist },
+ 	/* Quectel products using Quectel vendor ID */

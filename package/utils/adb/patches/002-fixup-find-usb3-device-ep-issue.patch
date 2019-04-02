@@ -1,0 +1,48 @@
+diff --git a/adb/usb_linux.c b/adb/usb_linux.c
+index f16bdd0..2541e80 100644
+--- a/adb/usb_linux.c
++++ b/adb/usb_linux.c
+@@ -235,9 +235,41 @@ static void find_usb_device(const char *base,
+ 
+                         DBGX("looking for bulk endpoints\n");
+                             // looks like ADB...
+-                        ep1 = (struct usb_endpoint_descriptor *)bufptr;
++                            // a USB 3.x device has super speed endpoint companian descriptor
++                            // skip other types of descriptor
++                        while (bufptr < bufend) {
++                            length = bufptr[0];
++                            type = bufptr[1];
++
++                            if (type == USB_DT_ENDPOINT) {
++                                ep1 = (struct usb_endpoint_descriptor *)bufptr;
++                                break;
++                            } else if (type == USB_DT_INTERFACE) {
++                                break;
++                            }
++                            bufptr += length;
++                        }
++                        if (!ep1) {
++                            D("endpoints not found\n");
++                            break;
++                        }
+                         bufptr += USB_DT_ENDPOINT_SIZE;
+-                        ep2 = (struct usb_endpoint_descriptor *)bufptr;
++                        while (bufptr < bufend) {
++                            length = bufptr[0];
++                            type = bufptr[1];
++
++                            if (type == USB_DT_ENDPOINT) {
++                                ep2 = (struct usb_endpoint_descriptor *)bufptr;
++                                break;
++                            } else if (type == USB_DT_INTERFACE) {
++                                break;
++                            }
++                            bufptr += length;
++                        }
++                        if (!ep2) {
++                            D("endpoints not found\n");
++                            break;
++                        }
+                         bufptr += USB_DT_ENDPOINT_SIZE;
+ 
+                         if (bufptr > devdesc + desclength ||
