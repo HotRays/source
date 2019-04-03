@@ -36,6 +36,7 @@ platform_check_image() {
 	cs-qr10|\
 	d105|\
 	d240|\
+	mt7620_g41201k|\
 	dap-1350|\
 	db-wrt01|\
 	dcs-930|\
