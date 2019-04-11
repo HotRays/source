@@ -1,6 +1,6 @@
 diff -urN a/drivers/mtd/maps/Makefile b/drivers/mtd/maps/Makefile
---- a/drivers/mtd/maps/Makefile	2018-10-11 17:24:39.605459517 +0800
-+++ b/drivers/mtd/maps/Makefile	2018-10-11 17:24:08.508943765 +0800
+--- a/drivers/mtd/maps/Makefile	2018-08-07 11:29:20.630275812 +0800
++++ b/drivers/mtd/maps/Makefile	2018-08-07 11:29:46.746669189 +0800
 @@ -17,6 +17,7 @@
  obj-$(CONFIG_MTD_TSUNAMI)	+= tsunami_flash.o
  obj-$(CONFIG_MTD_PXA2XX)	+= pxa2xx-flash.o
@@ -11,7 +11,7 @@ diff -urN a/drivers/mtd/maps/Makefile b/drivers/mtd/maps/Makefile
  obj-$(CONFIG_MTD_PHYSMAP_OF)	+= physmap_of_versatile.o
 diff -urN a/drivers/mtd/maps/ralink-flash.c b/drivers/mtd/maps/ralink-flash.c
 --- a/drivers/mtd/maps/ralink-flash.c	1970-01-01 08:00:00.000000000 +0800
-+++ b/drivers/mtd/maps/ralink-flash.c	2018-10-11 17:24:15.925066905 +0800
++++ b/drivers/mtd/maps/ralink-flash.c	2018-08-07 11:30:32.111347240 +0800
 @@ -0,0 +1,123 @@
 +/* ralink-flash.c
 + *
@@ -64,9 +64,9 @@ diff -urN a/drivers/mtd/maps/ralink-flash.c b/drivers/mtd/maps/ralink-flash.c
 +	}
 +
 +#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,36)
-+	ret = mtd->read(mtd, to, mtd->erasesize, &rdlen, bak);
++	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
 +#else
-+	ret = mtd_read(mtd, to, mtd->erasesize, &rdlen, bak);
++	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
 +#endif
 +
 +	if (ret != 0) {
@@ -77,11 +77,11 @@ diff -urN a/drivers/mtd/maps/ralink-flash.c b/drivers/mtd/maps/ralink-flash.c
 +	if (rdlen != mtd->erasesize)
 +		printk("warning: ra_mtd_write: rdlen is not equal to erasesize\n");
 +
-+	memcpy(bak, buf, len);
++	memcpy(bak + to, buf, len);
 +
 +	ei.mtd = mtd;
 +	ei.callback = NULL;
-+	ei.addr = to;
++	ei.addr = 0;
 +	ei.len = mtd->erasesize;
 +	ei.priv = 0;
 +#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,36)
@@ -96,9 +96,9 @@ diff -urN a/drivers/mtd/maps/ralink-flash.c b/drivers/mtd/maps/ralink-flash.c
 +	}
 +
 +#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,36)
-+	ret = mtd->write(mtd, to, mtd->erasesize, &wrlen, bak);
++	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
 +#else
-+	ret = mtd_write(mtd, to, mtd->erasesize, &wrlen, bak);
++	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
 +#endif
 +
 +
@@ -138,7 +138,7 @@ diff -urN a/drivers/mtd/maps/ralink-flash.c b/drivers/mtd/maps/ralink-flash.c
 +EXPORT_SYMBOL(ra_mtd_read_nm);
 diff -urN a/drivers/mtd/maps/ralink-flash.h b/drivers/mtd/maps/ralink-flash.h
 --- a/drivers/mtd/maps/ralink-flash.h	1970-01-01 08:00:00.000000000 +0800
-+++ b/drivers/mtd/maps/ralink-flash.h	2018-10-11 17:24:20.725146560 +0800
++++ b/drivers/mtd/maps/ralink-flash.h	2018-08-07 11:30:32.111347240 +0800
 @@ -0,0 +1,23 @@
 +#ifndef __RALINK_FLASH_H__
 +#define __RALINK_FLASH_H__
