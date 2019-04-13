@@ -145,3 +145,4 @@ LoadCodeMethod=0
 
 HT_TxStream=2
 HT_RxStream=2
+E2pAccessMode=2
