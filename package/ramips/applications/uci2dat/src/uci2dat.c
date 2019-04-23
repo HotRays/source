@@ -161,7 +161,7 @@ param CFG_ELEMENTS[] =
     /* Default configurations described in :
            MTK_Wi-Fi_SoftAP_Software_Programmming_Guide_v3.6.pdf
     */
-    {"CountryRegion", "region", NULL, hooker,  "1"},
+    {"CountryRegion", "aregion", NULL, hooker,  "1"},
     {"CountryRegionABand", "aregion", NULL, hooker, "7"},
     {"CountryCode", "country", NULL, hooker, NULL},
     {"BssidNum", NULL, NULL, hooker,  "1"},
